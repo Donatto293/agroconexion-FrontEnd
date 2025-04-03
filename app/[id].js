@@ -1,8 +1,8 @@
-import { Text, View, Image, ActivityIndicator } from "react-native";
+import { Text, View, Image, ActivityIndicator, Pressable } from "react-native";
 import { Link, useLocalSearchParams } from "expo-router";
 
 export default function Detail(){
-    const { product } = useLocalSearchParams();
+    const { product } = useLocalSearchParams(); 
     const productData = JSON.parse(product);
 
     if (!productData) {
@@ -23,8 +23,10 @@ export default function Detail(){
                     ${productData.price}
                 </Text>
                 
-                <Link href="/" className="text-blue-500 text-center">
-                    Volver a productos
+                <Link href="/" className="text-blue-500 text-center" asChild>
+                    
+                        Volver a productos
+                    
                 </Link>
             </View>
         </View>

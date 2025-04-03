@@ -15,6 +15,7 @@ export default function Layout(){
             >
           <Header />
           <View className="flex-1">
+            
             <Stack />
           </View>
         </View>

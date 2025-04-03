@@ -16,8 +16,8 @@ export default function Products() {
         );
     }
     return (
-        <ScrollView className="flex-1">
-            <View className="flex-1 bg-gray-100">
+        
+            <View className="bg-gray-100">
                
              
                 <Text className="text-lg font-bold text-center mt-4">Lista de Productos</Text>
@@ -27,20 +27,20 @@ export default function Products() {
                         params: { product: JSON.stringify(product) }
 
                     }}  
-                    className="flex-1" asChild>
-                    <Pressable className="active:opacity-50" android_ripple={{ color: '#A8E6A3' }}>
+                        className="flex-1" asChild>
+                        <Pressable className="active:opacity-50" android_ripple={{ color: '#A8E6A3' }}>
 
-                    <View key={product.id} className="p-4 bg-white m-2 rounded shadow">
-                        <Text className="text-xl font-semibold">{product.title}</Text>
-                        <Image source={{ uri: product.image }} style={styles.image} />
-                        <Text className="text-gray-600">{product.description}</Text>
-                        <Text className="text-green-500">${product.price}</Text>
-                    </View>
-                    </Pressable>
+                            <View key={product.id} className="p-4 bg-white m-2 rounded shadow">
+                                <Text className="text-xl font-semibold">{product.title}</Text>
+                                <Image source={{ uri: product.image }} style={styles.image} />
+                                <Text className="text-gray-600">{product.description}</Text>
+                                <Text className="text-green-500">${product.price}</Text>
+                            </View>
+                        </Pressable>
                     </Link>
                 ))}
             </View>
-        </ScrollView>
+       
     );
 
    
