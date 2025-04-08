@@ -9,6 +9,7 @@ export default function Detail(){
         return <ActivityIndicator size="large" color="#00732E" />;
     }
 
+    
     return (
         <View className="flex-1 p-4 bg-gray-100">
             <View className="bg-white p-4 rounded-lg shadow-sm">

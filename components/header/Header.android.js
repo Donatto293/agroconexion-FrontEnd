@@ -8,9 +8,9 @@ import {
     Image  } from 'react-native';
 
 import Feather from '@expo/vector-icons/Feather';
-import logo from '../assets/logo.png';
+import logo from '../../assets/logo.png';
 
-import Menu from './menu'; // Asegúrate de importar el componente Menu
+import Menu from '../menu/Menu'; // menu 
 
 export default function Header ( ) {
 

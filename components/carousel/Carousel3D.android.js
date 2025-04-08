@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, ActivityIndicator, useWindowDimensions } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import useFakeProducts from '../lib/fakeProduct';
-import { renderItem } from "../utils/render-item";
+import useFakeProducts from '../../lib/fakeProduct';
+import { renderItem } from "../../utils/render-item";
 
 import { useSharedValue } from "react-native-reanimated";
 
