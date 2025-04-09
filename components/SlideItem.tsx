@@ -7,7 +7,8 @@ import {
   Text,
   View,
   ViewProps,
-  Pressable
+  Pressable,
+  useWindowDimensions
 } from "react-native";
 import Animated from "react-native-reanimated";
 import type { AnimatedProps } from "react-native-reanimated";
@@ -25,6 +26,8 @@ interface Props extends AnimatedProps<ViewProps> {
 
 export const SlideItem: React.FC<Props> = (props) => {
   const { style, index = 0, rounded = false, testID, source, item, ...animatedViewProps } = props;
+  const { width } = useWindowDimensions();
+  const ITEM_HEIGHT = width * 0.6;
 
   return (
     <Link key={item.id} href={{
@@ -33,10 +36,13 @@ export const SlideItem: React.FC<Props> = (props) => {
     
                         }}  
                             className="flex-1" asChild>
-                            <Pressable className="active:opacity-50" android_ripple={{ color: '#A8E6A3' }}>
+                            <Pressable className="active:opacity-50" 
+                            android_ripple={{ color: '#A8E6A3' }}
+                             style={{ width: '100%', height: ITEM_HEIGHT }}
+                            >
     
    
-        <Animated.View testID={testID} style={{ flex: 1 }} {...animatedViewProps}>
+        <Animated.View testID={testID} style={{ flex: 1,width: '100%', height: ITEM_HEIGHT  }} {...animatedViewProps}>
         
         <Animated.Image
             style={[styles.container, style, rounded && { borderRadius: 15 }]}

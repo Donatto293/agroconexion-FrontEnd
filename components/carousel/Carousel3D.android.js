@@ -9,7 +9,7 @@ import { useSharedValue } from "react-native-reanimated";
 export default function Carousel3D() {
   const { products, loading, error } = useFakeProducts();
   const { width } = useWindowDimensions();
-  const ITEM_SIZE = width;
+  const ITEM_SIZE = width * 1; // 80% of the screen width
   const progress = useSharedValue(1);
 
   if (loading) return <ActivityIndicator size="large" color="#00732E" />;
@@ -23,11 +23,13 @@ export default function Carousel3D() {
     return (
         
         <View
-            className="bg-white"
+            className="bg-white "
             id="carousel-component"
             dataSet={{ kind: "basic-layouts", name: "parallax" }}
         >
-            
+            <View className='w-full justify-center items-center py-4'>
+                <Text className="text-2xl font-bold">Productos</Text>
+            </View>
             <Carousel
                 autoPlayInterval={2000}
                 data={products}
@@ -36,13 +38,14 @@ export default function Carousel3D() {
                 pagingEnabled={true}
                 snapEnabled={true}
                 width={ITEM_SIZE}
+                className="w-full"
                 style={{
-                    width: 800,
+                    width: '100%',
                 }}
                 mode="parallax"
                 modeConfig={{
                     parallaxScrollingScale: 0.9,
-                    parallaxScrollingOffset: 60,
+                    parallaxScrollingOffset: 40,
                 }}
                 onProgressChange={progress}
                 renderItem={renderItem({ rounded: true })}
