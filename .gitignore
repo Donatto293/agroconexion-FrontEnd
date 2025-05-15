@@ -1,36 +1,74 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Dependencias de Node
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# Entorno de desarrollo
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Builds y artefactos
+dist/
+build/
+coverage/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/captures/
+
+# iOS
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+ios/*.xcworkspace
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcuserdatad/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
 
 # Expo
 .expo/
-dist/
+.expo-shared/
 web-build/
-expo-env.d.ts
 
-# Native
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Editor/IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Metro
-.metro-health-check*
+# Testing
+/junit.xml
+/coverage/
+/nyc_output/
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
+# Misc
+*.log
+*.tmp
+*.tmp.*
+*.pid
+*.seed
+*.pid.local

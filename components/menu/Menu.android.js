@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Animated, View, Text, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { IconCoupons, IconShoppingCart,IconFavorites, IconHome, IconCategories , IconDiscount, IconUser} from './icons';
+import { IconCoupons, IconShoppingCart,IconFavorites, IconHome, IconCategories , IconDiscount, IconUser} from '../icons';
+import Login from '../../app/login';
+import { Link } from 'expo-router';
 
 
 export default function Menu() {
@@ -74,11 +76,19 @@ export default function Menu() {
                         zIndex: 40
                     }}
                 >
-            <View className="  h-300 justify-center items-center "> 
-                <View className="flex-row items-center bg-[#00732E] w-full h-16 justify-center ">
-                    <IconUser />
-                    <Text className="text-white text-lg font-bold ml-2">Inicia Sesion</Text>
-                </View>
+            {/* Contenido del menú */}
+            
+                <View className="  h-300 justify-center items-center "> 
+                <Link href={{
+                                    pathname: `/login`
+                                    
+            
+                                }} aschild>
+                    <View className="flex-row items-center bg-[#00732E] w-full h-16 justify-center ">
+                        <IconUser />
+                        <Text className="text-white text-lg font-bold ml-2">Inicia Sesion</Text>
+                    </View>
+                </Link>
                     
                 <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
                     <IconHome size={24} color="#4a5568" />

@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Alert } from 'react-native';
 import "./global.css"
-import Header from './components/header';
+import Header from './components/header/header';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 
