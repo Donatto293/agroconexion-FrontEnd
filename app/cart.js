@@ -15,21 +15,22 @@ export default function CartScreen() {
             <>
             <FlatList
                 data={cart}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={item => item.id.toString()}
                 renderItem={({ item }) => (
-                <View className="mb-4 p-3 bg-gray-100 rounded">
-                    <Text className="text-lg">{item.title}</Text>
-                    <Text className="text-green-600">${item.price}</Text>
+                    <View className="mb-4 p-3 bg-gray-100 rounded">
+                    <Text className="text-lg">{item.product.title}</Text>
+                    <Text className="text-green-600">
+                        ${item.product.price}  x {item.quantity}
+                    </Text>
                     <TouchableOpacity
-                    onPress={() => removeFromCart(item.id)}
-                    className="mt-2"
+                        onPress={() => removeFromCart(item.product.id)}
+                        className="mt-2"
                     >
-                    <Text className="text-red-500">Quitar</Text>
+                        <Text className="text-red-500">Quitar</Text>
                     </TouchableOpacity>
-                </View>
+                    </View>
                 )}
             />
-
             <TouchableOpacity onPress={clearCart} className="mt-6 p-3 bg-red-200 rounded">
                 <Text className="text-center text-red-700 font-bold">Vaciar carrito</Text>
             </TouchableOpacity>

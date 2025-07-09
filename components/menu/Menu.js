@@ -159,10 +159,12 @@ export default function Menu() {
                         <Text className="text-lg text-gray-800">Ofertas</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
-                        <IconCategories/>
-                        <Text className="text-lg text-gray-800">Categorias</Text>
-                    </TouchableOpacity>
+                    <Link href="/categorias" asChild>
+                        <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3">
+                            <IconCategories />
+                            <Text className="text-lg text-gray-800">Categorías</Text>
+                        </TouchableOpacity>
+                    </Link>
                     {/* Cerrar sesión */}
                     {username && (
                     <TouchableOpacity
