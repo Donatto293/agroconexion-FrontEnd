@@ -1,10 +1,11 @@
 import { View } from "react-native";
 import { Stack } from "expo-router";
+import { CartProvider } from "../context/cartContext";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 
 import "../global.css"
-import Header from "../components/header/Header.android";
+
 
 
 export default function Layout(){
@@ -13,16 +14,17 @@ export default function Layout(){
        
           
           <View className="flex-1">
-            
-            <Stack 
-              screenOptions={
-                {
-                    headerShown: false,
-                    
+            <CartProvider>
+              <Stack 
+                screenOptions={
+                  {
+                      headerShown: false,
+
                 }
 
               }
             />
+            </CartProvider>
           </View>
         
     </SafeAreaProvider>

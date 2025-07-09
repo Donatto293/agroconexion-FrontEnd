@@ -1,10 +1,12 @@
 import { View, Text , ActivityIndicator, ScrollView, Image, StyleSheet, Pressable} from 'react-native';
 import useFakeProducts from '../lib/fakeProduct';
-import { Link } from 'expo-router';
+import useProducts from '../lib/products';
+import { useRouter, Link } from 'expo-router';
 
 
 export default function Products() {
-    const { products, loading, error } = useFakeProducts();
+    const router = useRouter();
+    const { products, loading, error } = useProducts();
     if (loading) {
         return <ActivityIndicator size="large" color="#00732E" />;
     }
@@ -22,11 +24,7 @@ export default function Products() {
              
                 <Text className="text-lg font-bold text-center mt-4">Lista de Productos</Text>
                 {products.map((product) => (
-                    <Link key={product.id} href={{
-                        pathname: `/${product.id}`,
-                        params: { product: JSON.stringify(product) }
-
-                    }}  
+                    <Link key={product.id} href={`/${product.id}`} 
                         className="flex-1" asChild>
                         <Pressable className="active:opacity-50" android_ripple={{ color: '#A8E6A3' }}>
 

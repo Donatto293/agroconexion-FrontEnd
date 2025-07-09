@@ -1,15 +1,23 @@
-import React, { useState, useRef } from 'react';
-import { Animated, View, Text, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useRef, useEffect, useContext} from 'react';
+import { Animated, View, Text, TouchableOpacity, TouchableWithoutFeedback, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { IconCoupons, IconShoppingCart,IconFavorites, IconHome, IconCategories , IconDiscount, IconUser} from '../icons';
-import Login from '../../app/login';
+
 import { Link } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { CartContext } from '../../context/cartContext';
 
 
 export default function Menu() {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [username, setUsername] = useState(null);
+    const [avatar, setAvatar] = useState(null);
+
     const slideAnim = useRef(new Animated.Value(-300)).current;
     const overlayAnim = useRef(new Animated.Value(0)).current;
+    {/* carrito*/}
+    const { cart, total, addToCart, removeFromCart } = useContext(CartContext);
 
     const toggleMenu = () => {
         if (menuOpen) {
@@ -40,6 +48,32 @@ export default function Menu() {
                 })
             ]).start();
         }
+    };
+     useEffect(() => {
+        const getUser = async () => {
+            const name = await AsyncStorage.getItem('username');
+            const avatarUrl = await AsyncStorage.getItem('avatar');
+            
+            setUsername(name); // null si no hay sesión
+           
+            if (name) {
+                console.log('Usuario actual:', name);
+                console.log('Avatar URL:', avatarUrl);
+            } else {
+                console.log('No hay usuario logueado');
+            }
+        };
+        getUser();
+     }, []); 
+     const handleLogout = async () => {
+        await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('username');
+        await AsyncStorage.removeItem('avatar');
+        setUsername(null);
+        setAvatar(null);
+        setMenuOpen(false);
+        router.replace('/'); // redirige a la página principal
     };
 
   
@@ -79,15 +113,21 @@ export default function Menu() {
             {/* Contenido del menú */}
             
                 <View className="  h-300 justify-center items-center "> 
-                <Link href={{
-                                    pathname: `/login`
-                                    
-            
-                                }} aschild>
-                    <View className="flex-row items-center bg-[#00732E] w-full h-16 justify-center ">
-                        <IconUser />
-                        <Text className="text-white text-lg font-bold ml-2">Inicia Sesion</Text>
-                    </View>
+                <Link href={username ? "/" : "/login"} asChild>
+                    <TouchableOpacity className="flex-row items-center bg-[#00732E] w-full h-16 justify-center">
+                          {username && avatar ? (
+                            <Image
+                                source={{ uri: avatar }}
+                                className="w-10 h-10 rounded-full"
+                                resizeMode="cover"
+                            />
+                            ) : (
+                                <IconUser />
+                            )}
+                        <Text className="text-white text-lg font-bold ml-2">
+                            {username ? `Hola, ${username}` : 'Inicia Sesión'}
+                        </Text>
+                    </TouchableOpacity>
                 </Link>
                     
                 <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
@@ -95,13 +135,15 @@ export default function Menu() {
                     <Text className="text-lg text-gray-800">Inicio</Text>
            
                 </TouchableOpacity>
-                    
-                    
-                <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
-                        <IconShoppingCart/>
-                        <Text className="text-lg text-gray-800">Carrito</Text>
-                    </TouchableOpacity>
-                    
+
+                    <Link href={ username ? "/cart" : "/login"} asChild>
+                    <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
+                            <IconShoppingCart/>
+                            <Text className="text-lg text-gray-800">Carrito
+                                {cart.length > 0 && ` (${cart.length})`}
+                            </Text>
+                        </TouchableOpacity>
+                    </Link>
                     <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
                         <IconFavorites/>
                         <Text className="text-lg text-gray-800">Favoritos</Text>
@@ -121,6 +163,16 @@ export default function Menu() {
                         <IconCategories/>
                         <Text className="text-lg text-gray-800">Categorias</Text>
                     </TouchableOpacity>
+                    {/* Cerrar sesión */}
+                    {username && (
+                    <TouchableOpacity
+                        onPress={handleLogout}
+                        className="w-full flex-row justify-center items-center px-4 py-3 mt-2 bg-red-100 rounded"
+                    >
+                        <Ionicons name="log-out-outline" size={22} color="#dc2626" />
+                        <Text className="text-red-600 text-base ml-2">Cerrar sesión</Text>
+                    </TouchableOpacity>
+                    )}
 
             </View>
         
