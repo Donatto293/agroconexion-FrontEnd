@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView } from "react-native";
 import Header from "../components/header/Header";
 import ProductSmall from "../components/productSmall";
-import useProducts from "../lib/products";
+import useProducts from "../api/products";
 import Products from "../components/products";
 
 

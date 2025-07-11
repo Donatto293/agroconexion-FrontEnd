@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { productsService } from '../../lib/categorias';
+import { productsService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /**

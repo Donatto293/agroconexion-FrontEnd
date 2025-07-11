@@ -1,23 +1,23 @@
 import { View, Text, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useContext } from 'react';
 import { Link } from 'expo-router';
-import { CartContext } from '../context/cartContext';
-import {loadCart} from '../context/cartContext';
-export default function CartScreen() {
-  const { cart, removeFromCart, clearCart, total } = useContext(CartContext);
+
+import { FavoritesContext } from '../context/favoritesContext';
+export default function FavoritesScreen() {
+  const { addFavorite, removeFromFavorites, clearFavorites } = useContext(FavoritesContext);
 
 
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">
         <View className="flex-1 p-4 bg-white">
-        <Text className="text-2xl font-bold mb-4">Carrito de Compras</Text>
+        <Text className="text-2xl font-bold mb-4">Aun no tienes favoritos</Text>
 
-        {cart.length === 0 ? (
-            <Text>El carrito está vacío.</Text>
+        {favorites.length === 0 ? (
+            <Text>No tienes favoritos.</Text>
         ) : (
             <>
             <FlatList
-                data={cart}
+                data={favorites}
                 keyExtractor={item => item?.id?.toString()}
                 renderItem={({ item }) => (
                   
@@ -33,7 +33,7 @@ export default function CartScreen() {
                         ${item.product.price}  x {item.quantity}
                     </Text>
                     <TouchableOpacity
-                        onPress={() => removeFromCart(item.product.id)}
+                        onPress={() => removeFromFavorites(item.product.id)}
                         className="mt-2"
                     >
                         <Text className="text-red-500">Quitar</Text>
@@ -42,14 +42,8 @@ export default function CartScreen() {
                 )}
             />
 
-            <View className="mt-4 p-4 bg-white rounded shadow">
-                <Text className="text-xl font-bold text-right">
-                Total: ${total.toFixed(2)}
-                </Text>
-            </View>
-
-            <TouchableOpacity onPress={clearCart} className="mt-6 p-3 bg-red-200 rounded">
-                <Text className="text-center text-red-700 font-bold">Vaciar carrito</Text>
+            <TouchableOpacity onPress={clearFavorites} className="mt-6 p-3 bg-red-200 rounded">
+                <Text className="text-center text-red-700 font-bold">Vaciar favoritos</Text>
             </TouchableOpacity>
             </>
         )}

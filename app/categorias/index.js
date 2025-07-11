@@ -27,7 +27,7 @@ import { Link } from 'expo-router';
  * Importación del servicio de categorías
  * Nota: La ruta '../../lib/categorias' debe apuntar al archivo correcto
  */
-import { categoriesService } from '../../lib/categorias';
+import { categoriesService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /**

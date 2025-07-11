@@ -1,6 +1,6 @@
 import { View, Text, Image, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import useProducts from '../lib/products';
+import useProducts from '../api/products';
 import { useContext } from 'react';
 import { CartContext } from '../context/cartContext';
 

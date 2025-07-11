@@ -5,7 +5,7 @@ import {
   getCartAPI,
   addToCartAPI,
   removeFromCartAPI
-} from "../lib/cart";
+} from "../api/cart";
 import { useRouter } from "expo-router";
 
 export const CartContext = createContext();
@@ -59,10 +59,8 @@ export const CartProvider = ({ children }) => {
         console.log("Llamando a removeFromCartAPI con ID:", productId);
       await removeFromCartAPI(productId, token);
       console.log("Producto eliminado correctamente");
-      await loadCart();
-     
-      router.replace("/carrito"); // redirigir al carrito
-      
+      await loadCart(); 
+         
     } catch (err) {
       console.error("Error al eliminar del carrito:", err.response?.data || err);
     }

@@ -23,3 +23,5 @@ export const IconArrowLeft = () => <AntDesign name="arrowleft" size={30} color="
 export const EyeWithLine=()=> <Entypo name="eye-with-line" size={24} color="black" />
 
 export const IconPlus =() =><Entypo name="plus" size={24} color="black" />
+
+export const IconFav =() =><AntDesign name="hearto" size={24} color="red" />

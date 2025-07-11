@@ -1,6 +1,5 @@
 import { View, Text , ActivityIndicator, ScrollView, Image, StyleSheet, Pressable} from 'react-native';
-import useFakeProducts from '../lib/fakeProduct';
-import useProducts from '../lib/products';
+import useProducts from '../api/products';
 import { useRouter, Link } from 'expo-router';
 
 
