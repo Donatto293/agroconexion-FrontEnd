@@ -6,9 +6,9 @@ import { IconCoupons, IconShoppingCart,IconFavorites, IconHome, IconCategories ,
 import { Link } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 import { CartContext } from '../../context/cartContext';
-
-
+import { FavoritesContext } from '../../context/favoritesContext';
 export default function Menu() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [username, setUsername] = useState(null);
@@ -18,6 +18,8 @@ export default function Menu() {
     const overlayAnim = useRef(new Animated.Value(0)).current;
     {/* carrito*/}
     const { cart, total, addToCart, removeFromCart } = useContext(CartContext);
+    {/* favoritos */}
+    const { favorites, addFavorite, removeFavorite, fetchFavorites } = useContext(FavoritesContext);
 
     const toggleMenu = () => {
         if (menuOpen) {
@@ -144,15 +146,20 @@ export default function Menu() {
                             </Text>
                         </TouchableOpacity>
                     </Link>
-                    <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
-                        <IconFavorites/>
-                        <Text className="text-lg text-gray-800">Favoritos</Text>
+                    <Link href={username ? "/favorites" : "/login"} asChild>
+                    <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3">
+                        <IconFavorites />
+                        <Text className="text-lg text-gray-800">
+                        Favoritos {favorites.length > 0 && `(${favorites.length})`}
+                        </Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
-                        <IconCoupons/>
-                        <Text className="text-lg text-gray-800">Cupones</Text>
-                    </TouchableOpacity>
+                    </Link>
+                    <Link href="/cupones" asChild>
+                        <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
+                            <IconCoupons/>
+                            <Text className="text-lg text-gray-800">Cupones</Text>
+                        </TouchableOpacity>
+                    </Link>
 
                     <TouchableOpacity className="w-full flex-row justify-center items-center px-4 py-3 ">
                         <IconDiscount/>

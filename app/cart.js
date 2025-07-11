@@ -3,14 +3,23 @@ import { useContext } from 'react';
 import { Link } from 'expo-router';
 import { CartContext } from '../context/cartContext';
 import {loadCart} from '../context/cartContext';
+import { IconArrowLeft } from '../components/icons';
+import { useRouter } from 'expo-router';
 export default function CartScreen() {
   const { cart, removeFromCart, clearCart, total } = useContext(CartContext);
-
+    const router = useRouter();
 
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">
         <View className="flex-1 p-4 bg-white">
         <Text className="text-2xl font-bold mb-4">Carrito de Compras</Text>
+        <View className=''>
+            <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
+                            <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
+                                <IconArrowLeft color="#00732E"  />
+                            </TouchableOpacity>
+            </View>
+        </View>
 
         {cart.length === 0 ? (
             <Text>El carrito está vacío.</Text>

@@ -21,7 +21,7 @@ import { View, Text, FlatList, ActivityIndicator, StyleSheet, RefreshControl, To
  * Importación del sistema de routing
  * Link: Componente para navegación entre pantallas
  */
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 /**
  * Importación del servicio de categorías
@@ -29,6 +29,7 @@ import { Link } from 'expo-router';
  */
 import { categoriesService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { IconArrowLeft } from '../../components/icons';
 
 /**
  * Componente principal de pantalla de categorías
@@ -108,6 +109,7 @@ export default function CategoriesScreen() {
       </View>
     );
   }
+  const router = useRouter()
 
   // Renderizado cuando hay error
   if (error) {
@@ -133,7 +135,13 @@ export default function CategoriesScreen() {
     <View >
       {/* Título de la pantalla */}
       <Text style={styles.header}>Nuestras Categorías</Text>
-      
+       <View className=''>
+            <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
+                            <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
+                                <IconArrowLeft color="#00732E"  />
+                            </TouchableOpacity>
+            </View>
+      </View>
       {/* Lista optimizada de categorías */}
       <FlatList
         data={categories} // Fuente de datos

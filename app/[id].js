@@ -1,20 +1,50 @@
 import { View, Text, Image, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import useProducts from '../api/products';
-import { useContext } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { CartContext } from '../context/cartContext';
+import { FavoritesContext } from '../context/favoritesContext'
+import { IconFav, IconFavnot } from '../components/icons';
+import { Icon } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();     // recibimos solo el ID
   const { products, loading, error } = useProducts();
   const { addToCart } = useContext(CartContext);
+   const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
   const router = useRouter();
 
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+    // Verificamos si está en favoritos (al montar o cuando cambia)
+  useEffect(() => {
+    if (productData) {
+      const exists = favorites.some(fav => fav.product.id === productData.id);
+      setIsFavorite(exists);
+    }
+  }, [favorites, productData]);
+
+  const handleToggleFavorite = async () => {
+     if (isProcessing) return; // evita múltiples clics
+      setIsProcessing(true)
+    if (!productData) return;
+
+    if (isFavorite) {
+      await removeFavorite(productData.id);
+    } else {
+      await addFavorite(productData.id);
+    }
+
+    // Invertir el estado local manualmente para mostrar efecto inmediato
+    setIsFavorite(!isFavorite);
+  };
   if (loading) return <ActivityIndicator size="large" color="#00732E" />;
   if (error) return <Text className="text-red-500">{error}</Text>;
 
   // Buscamos el producto por id (asegúrate de comparar strings)
   const productData = products.find(p => String(p.id) === id);
+
 
   if (!productData) {
     return (
@@ -23,12 +53,25 @@ export default function ProductDetail() {
       </View>
     );
   }
+  
 
   return (
+    <SafeAreaView className="flex-1 bg-gray-100">
     <ScrollView className="flex-1 bg-gray-100 p-4">
       <TouchableOpacity onPress={() => router.back()} className="mb-4">
         <Text className="text-blue-500">← Volver</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+          onPress={handleToggleFavorite}
+          disabled={isProcessing}
+          className="absolute top-12 right-4 z-10 bg-white p-2 rounded-full shadow"
+        >
+         {isFavorite ? (
+            <IconFav size={24} color="red" />
+          ) : (
+            <IconFavnot size={24} color="gray" />
+          )}
+        </TouchableOpacity>
 
       <View className="bg-white p-4 rounded-lg shadow-sm">
         <Image 
@@ -53,5 +96,6 @@ export default function ProductDetail() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

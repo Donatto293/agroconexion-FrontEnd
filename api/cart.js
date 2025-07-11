@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://10.3.145.44:8000/api/users/cart/user/cart/';
+const API_URL = 'http://192.168.20.35:8000/api/users/cart/user/cart/';
 //cargar carrito
 export async function getCartAPI(token) {
     const response = await axios.get(API_URL, {
@@ -18,7 +18,7 @@ export async function addToCartAPI(productId, quantity, token) {
 }
 
 export async function removeFromCartAPI(productId, token) {
-   const url = `http://10.3.145.44:8000/api/users/cart/cart/${productId}/`;
+   const url = `http://192.168.20.35:8000/api/users/cart/cart/${productId}/`;
 
   const response = await axios.delete(url, {
     headers: { Authorization: `Bearer ${token}` }

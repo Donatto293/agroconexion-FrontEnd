@@ -1,28 +1,54 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import {
-  getCartAPI,
-  addToCartAPI,
-  removeFromCartAPI
-} from "../api/cart";
-import { useRouter } from "expo-router";
+import { getCartAPI, addToCartAPI, removeFromCartAPI } from "../api/cart";
 
 export const CartContext = createContext();
-const router = useRouter();
 
-
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart debe usarse dentro de un CartProvider');
+  }
+  return context;
+};
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [shippingDiscount, setShippingDiscount] = useState(0);
   const [total, setTotal] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const SHIPPING_COST = 5; // Costo fijo de envío
 
-  // recalcular total cuando cambie el carrito
+  // Calcular totales
   useEffect(() => {
-    setTotal(cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0));
-  }, [cart]);
+    const newSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    setSubtotal(newSubtotal);
 
-  // cargar carrito del servidor
+    let productDiscount = 0;
+    let newShippingDiscount = 0;
+
+    if (appliedCoupon) {
+      // Descuento por porcentaje o monto fijo en productos
+      if (appliedCoupon.type === 'percentage') {
+        productDiscount = newSubtotal * (appliedCoupon.discount / 100);
+      } else if (appliedCoupon.type === 'fixed') {
+        productDiscount = appliedCoupon.discount;
+      }
+
+      // Descuento por envío gratis
+      if (appliedCoupon.freeShipping) {
+        newShippingDiscount = SHIPPING_COST;
+      }
+    }
+
+    setDiscount(productDiscount);
+    setShippingDiscount(newShippingDiscount);
+    setTotal(Math.max(0, newSubtotal - productDiscount + SHIPPING_COST - newShippingDiscount));
+  }, [cart, appliedCoupon]);
+
+  // Cargar carrito del servidor
   const loadCart = async () => {
     const token = await AsyncStorage.getItem("accessToken");
     try {
@@ -33,14 +59,29 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // al montar, lee el carrito
-  useEffect(() => {
-    loadCart();
-  }, []);
+  // Aplicar cupón
+  const applyCoupon = (coupon) => {
+    if (subtotal >= coupon.minPurchase) {
+      setAppliedCoupon({
+        id: coupon.id,
+        code: coupon.code,
+        discount: coupon.discount || 0,
+        type: coupon.discount > 0 ? 'percentage' : 'fixed',
+        minPurchase: coupon.minPurchase,
+        freeShipping: coupon.freeShipping || false
+      });
+      return true;
+    }
+    return false;
+  };
 
-  // agrega un producto
+  // Remover cupón
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+  };
+
+  // Agregar producto al carrito
   const addToCart = async (product) => {
-  
     const token = await AsyncStorage.getItem("accessToken");
     try {
       await addToCartAPI(product.id, 1, token);
@@ -50,43 +91,47 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // elimina un producto
+  // Eliminar producto del carrito
   const removeFromCart = async (productId) => {
-    console.log("Eliminando producto con ID:", productId);
     const token = await AsyncStorage.getItem("accessToken");
-   
     try {
-        console.log("Llamando a removeFromCartAPI con ID:", productId);
       await removeFromCartAPI(productId, token);
-      console.log("Producto eliminado correctamente");
-      await loadCart(); 
-         
+      await loadCart();
     } catch (err) {
       console.error("Error al eliminar del carrito:", err.response?.data || err);
     }
   };
-// vaciar el carrito
+
+  // Vaciar carrito
   const clearCart = async () => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      // eliminar cada producto uno a uno
       await Promise.all(
-        cart.map(item =>
-          // tu item.product.id es el ID real del producto
-          removeFromCartAPI(item.product.id, token)
-        )
+        cart.map(item => removeFromCartAPI(item.product.id, token))
       );
-      // volver a cargar (ahora estará vacío)
       await loadCart();
-
+      removeCoupon();
     } catch (err) {
       console.error("Error al vaciar carrito:", err.response?.data || err.message);
     }
   };
 
-
   return (
-    <CartContext.Provider value={{ cart, total, addToCart, removeFromCart, clearCart }}>
+    <CartContext.Provider value={{ 
+      cart,
+      subtotal,
+      discount,
+      shippingDiscount,
+      shippingCost: SHIPPING_COST,
+      total,
+      appliedCoupon,
+      addToCart,
+      removeFromCart,
+      clearCart,
+      loadCart,
+      applyCoupon,
+      removeCoupon
+    }}>
       {children}
     </CartContext.Provider>
   );

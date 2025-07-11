@@ -5,6 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 
 import "../global.css"
+import { FavoritesProvider } from "../context/favoritesContext";
 
 
 
@@ -15,16 +16,19 @@ export default function Layout(){
           
           <View className="flex-1">
             <CartProvider>
-              <Stack 
-                screenOptions={
-                  {
-                      headerShown: false,
+              <FavoritesProvider>
+                <Stack 
+                  screenOptions={
+                    {
+                        headerShown: false,
+
+                  }
 
                 }
-
-              }
-            />
+              />
+              </FavoritesProvider>
             </CartProvider>
+            
           </View>
         
     </SafeAreaProvider>

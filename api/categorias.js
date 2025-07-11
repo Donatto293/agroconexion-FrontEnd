@@ -4,7 +4,7 @@ import axios from 'axios';
  * URL base de la API del backend Django
  * @constant {string}
  */
-const API_BASE_URL = 'http://10.3.145.44:8000/api'; // Sin barra final
+const API_BASE_URL = 'http://192.168.20.35:8000/api'; // Sin barra final
 
 /**
  * Instancia configurada de axios para todas las peticiones HTTP

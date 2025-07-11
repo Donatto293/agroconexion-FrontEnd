@@ -5,64 +5,41 @@ import { getFavorites, addFavoriteAPI,removeFavoriteAPI } from '../api/favorites
 export const FavoritesContext = createContext();
 
 export const FavoritesProvider = ({ children }) => {
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-
-
-  const loadFavorites= async ()=> {
-    const token = await AsyncStorage.getItem("accessToken");
-    try {
-      const data = await getFavorites(token);
-      setFavorites(data.products);
-    } catch (err) {
-      console.error("Error loading favorites:", err);
-    }
-  }
+ const [favorites, setFavorites] = useState([]);
 
   const fetchFavorites = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     try {
-      setLoading(true);
-      const response = await getFavorites(token);
-      setFavorites(response);
+      const data = await getFavorites(token);
+      setFavorites(data); // o data.products según tu backend
     } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
+      console.error("Error loading favorites:", err);
     }
   };
 
-  const addFavorite = async (product) => {
+  const addFavorite = async (productId) => {
     const token = await AsyncStorage.getItem("accessToken");
     try {
-      const response = await addFavoriteAPI(productId, 1, token);
-      await loadFavorites();
+      await addFavoriteAPI(productId, token);
+      await fetchFavorites();
     } catch (err) {
       console.error('Error adding favorite:', err);
-      setError(err);
     }
   };
 
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  const clearFavorites = async () => {
+  const removeFavorite = async (productId) => {
     const token = await AsyncStorage.getItem("accessToken");
     try {
-      await AsyncStorage.removeItem('favorites');
-      setFavorites([]);
+      await removeFavoriteAPI(productId, token);
+      await fetchFavorites();
     } catch (err) {
-      console.error('Error clearing favorites:', err);
-      setError(err);
+      console.error('Error removing favorite:', err);
     }
   };
 
   return (
-    <FavoritesContext.Provider value={{ favorites, loading, error, fetchFavorites, loadFavorites, addFavorite }}>
+    <FavoritesContext.Provider value={{ favorites, addFavorite, removeFavorite, fetchFavorites }}>
       {children}
     </FavoritesContext.Provider>
   );
-}
+};

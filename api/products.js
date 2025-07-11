@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { ActivityIndicator } from 'react-native';
 
-const API_URL ='http://10.3.145.44:8000/api/products/list-products/';
+const API_URL ='http://192.168.20.35:8000/api/products/list-products/';
 
 export default function useProducts() {
     const [products, setProducts] = useState([]);

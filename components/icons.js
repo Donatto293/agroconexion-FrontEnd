@@ -25,3 +25,4 @@ export const EyeWithLine=()=> <Entypo name="eye-with-line" size={24} color="blac
 export const IconPlus =() =><Entypo name="plus" size={24} color="black" />
 
 export const IconFav =() =><AntDesign name="hearto" size={24} color="red" />
+export const IconFavnot =() =><Ionicons name="heart-dislike-outline" size={24} color="red" />
