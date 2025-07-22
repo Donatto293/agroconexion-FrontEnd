@@ -45,8 +45,7 @@ export default function ProductSmall({ products, loading, error }) {
           const isFavorite = favoritesState[product.id] === true;
 
           const handleToggleFavorite = async () => {
-            if (isProcessing) return; // evita múltiples clics
-            setIsProcessing(true);
+            
             if (isFavorite) {
               await removeFavorite(product.id);
             } else {
@@ -76,7 +75,7 @@ export default function ProductSmall({ products, loading, error }) {
               {/* BOTÓN FAVORITOS (esquina inferior derecha) */}
               <TouchableRipple
                 onPress={handleToggleFavorite}
-                disabled={isProcessing}
+                
                 rippleColor="rgba(255, 0, 0, 0.2)"
                 borderless
                 style={{ position: 'absolute', bottom: 10, right: 10, borderRadius: 999 }}

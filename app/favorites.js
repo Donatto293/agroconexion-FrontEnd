@@ -50,12 +50,7 @@ export default function FavoritesScreen() {
               )}
             />
 
-            <TouchableOpacity
-              onPress={() => setFavorites([])}
-              className="mt-6 p-3 bg-red-200 rounded"
-            >
-              <Text className="text-center text-red-700 font-bold">Vaciar favoritos</Text>
-            </TouchableOpacity>
+            
           </>
         )}
       </View>

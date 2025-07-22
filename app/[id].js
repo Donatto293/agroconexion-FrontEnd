@@ -26,9 +26,7 @@ export default function ProductDetail() {
   }, [favorites, productData]);
 
   const handleToggleFavorite = async () => {
-     if (isProcessing) return; // evita múltiples clics
-      setIsProcessing(true)
-    if (!productData) return;
+
 
     if (isFavorite) {
       await removeFavorite(productData.id);
@@ -63,13 +61,15 @@ export default function ProductDetail() {
       </TouchableOpacity>
       <TouchableOpacity
           onPress={handleToggleFavorite}
-          disabled={isProcessing}
+        
           className="absolute top-12 right-4 z-10 bg-white p-2 rounded-full shadow"
         >
          {isFavorite ? (
-            <IconFav size={24} color="red" />
+          <IconFavnot size={24} color="gray" />
+            
           ) : (
-            <IconFavnot size={24} color="gray" />
+            <IconFav size={24} color="red" />
+            
           )}
         </TouchableOpacity>
 

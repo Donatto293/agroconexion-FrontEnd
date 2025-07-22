@@ -3,10 +3,12 @@
  * @module CategoryProductsScreen
  */
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { productsService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { IconArrowLeft } from '../../components/icons';
+import { useRouter } from 'expo-router';
 
 /**
  * Componente que muestra los productos de una categoría específica
@@ -25,6 +27,7 @@ export default function CategoryProductsScreen() {
   
   // Estado para almacenar posibles errores
   const [error, setError] = useState(null);
+  const router = useRouter();
 
   /**
    * Efecto secundario que se ejecuta al montar el componente o cuando cambia el ID
@@ -78,6 +81,11 @@ export default function CategoryProductsScreen() {
   return (
     <SafeAreaView style={styles.container}> 
     <View>
+      <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
+                                              <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
+                                                  <IconArrowLeft color="#00732E"  />
+                                              </TouchableOpacity>
+                              </View>
       {/* Título de la pantalla */}
       <Text style={styles.title}>Productos</Text>
       

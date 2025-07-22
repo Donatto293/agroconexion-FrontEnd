@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://192.168.20.35:8000/api/users/cart/favorites/';
 
-
 export const getFavorites = async (token) => {
   const response = await axios.get(API_URL, {
     headers: { Authorization: `Bearer ${token}` }
