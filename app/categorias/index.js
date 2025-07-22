@@ -1,275 +1,263 @@
-/**
- * Importación de React y sus hooks fundamentales
- * useState: Para manejar estado local del componente
- * useEffect: Para efectos secundarios y ciclo de vida
- */
 import React, { useState, useEffect } from 'react';
-
-/**
- * Importación de componentes básicos de React Native
- * View: Contenedor fundamental similar a div
- * Text: Para mostrar texto
- * FlatList: Componente optimizado para listas largas
- * ActivityIndicator: Spinner de carga
- * StyleSheet: Para estilos organizados
- * RefreshControl: Para funcionalidad pull-to-refresh
- * TouchableOpacity: Botón con efecto de opacidad
- */
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
-
-/**
- * Importación del sistema de routing
- * Link: Componente para navegación entre pantallas
- */
 import { Link, useRouter } from 'expo-router';
-
-/**
- * Importación del servicio de categorías
- * Nota: La ruta '../../lib/categorias' debe apuntar al archivo correcto
- */
 import { categoriesService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconArrowLeft } from '../../components/icons';
+import { MaterialCommunityIcons, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 
-/**
- * Componente principal de pantalla de categorías
- * @function CategoriesScreen
- * @description Muestra una lista de categorías con capacidad de navegación a productos
- * @returns {JSX.Element} Árbol de elementos React para renderizar
- */
+// Paleta de colores vibrantes
+const CATEGORY_COLORS = [
+  '#E8F5E9', '#FFF3E0', '#E1F5FE', 
+  '#F3E5F5', '#E0F7FA', '#FFEBEE',
+  '#E8EAF6', '#F1F8E9', '#FCE4EC',
+  '#E6F9E6', '#FFF8E1', '#E0F2F1',
+  '#FBE9E7', '#EDE7F6', '#E8F5E9'
+];
+
+// Mapeo exacto de iconos para tus categorías
+const CATEGORY_ICONS = {
+  'frutas': { icon: 'food-apple', lib: MaterialCommunityIcons },
+  'verduras': { icon: 'carrot', lib: FontAwesome5 },
+  'granos': { icon: 'wheat', lib: MaterialCommunityIcons },
+  'lacteos': { icon: 'cow', lib: MaterialCommunityIcons },
+  'carnes': { icon: 'food-steak', lib: MaterialCommunityIcons },
+  'embutidos': { icon: 'sausage', lib: MaterialCommunityIcons },
+  'huevos': { icon: 'egg', lib: MaterialCommunityIcons },
+  'panaderia': { icon: 'bread-slice', lib: FontAwesome5 },
+  'miel y derivados': { icon: 'honeycomb', lib: MaterialCommunityIcons },
+  'bebidas': { icon: 'cup', lib: MaterialCommunityIcons },
+  'bebidas fermentadas': { icon: 'beer-outline', lib: MaterialCommunityIcons },
+  'productos organicos': { icon: 'leaf', lib: MaterialCommunityIcons },
+  'semillas': { icon: 'seed', lib: MaterialCommunityIcons },
+  'hecho a mano': { icon: 'hand-holding-heart', lib: FontAwesome5 },
+  'plantas y flores': { icon: 'flower', lib: MaterialCommunityIcons },
+  'productos transformados': { icon: 'factory', lib: MaterialCommunityIcons },
+  'default': { icon: 'shopping', lib: MaterialCommunityIcons }
+};
+
 export default function CategoriesScreen() {
-  /**
-   * Estado para almacenar la lista de categorías
-   * @type {[Array, Function]}
-   * @default []
-   */
   const [categories, setCategories] = useState([]);
-
-  /**
-   * Estado para controlar el estado de carga inicial
-   * @type {[boolean, Function]}
-   * @default true
-   */
   const [loading, setLoading] = useState(true);
-
-  /**
-   * Estado para almacenar mensajes de error
-   * @type {[string|null, Function]}
-   * @default null
-   */
   const [error, setError] = useState(null);
-
-  /**
-   * Estado para controlar el refresco manual (pull-to-refresh)
-   * @type {[boolean, Function]}
-   * @default false
-   */
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
-  /**
-   * Función asíncrona para cargar categorías
-   * @async
-   * @function loadCategories
-   * @param {boolean} [isRefreshing=false] - Indica si es recarga manual
-   * @returns {Promise<void>}
-   */
   const loadCategories = async (isRefreshing = false) => {
     try {
-      // Actualiza estado según tipo de carga
       isRefreshing ? setRefreshing(true) : setLoading(true);
-      setError(null); // Resetea errores previos
-      
-      // Obtiene datos del servicio
+      setError(null);
       const data = await categoriesService.getAll();
-      setCategories(data); // Actualiza estado con nuevos datos
-      
+      setCategories(data);
     } catch (err) {
-      // Captura y almacena error
       setError(err.message);
     } finally {
-      // Finaliza estado de carga
       isRefreshing ? setRefreshing(false) : setLoading(false);
     }
   };
 
-  /**
-   * Efecto para carga inicial de datos
-   * Se ejecuta solo al montar el componente (dependencias vacías)
-   */
   useEffect(() => {
     loadCategories();
   }, []);
 
-  // Renderizado durante carga inicial
   if (loading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#00732E" />
         <Text style={styles.loadingText}>Cargando categorías...</Text>
       </View>
     );
   }
-  const router = useRouter()
 
-  // Renderizado cuando hay error
   if (error) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Error: {error}</Text>
-        <Text 
-          style={styles.retryText}
-          onPress={() => loadCategories()} // Reintenta al presionar
-        >
-          Presiona para reintentar
-        </Text>
-        <Text style={styles.urlText}>
-          Endpoint: http://192.168.0.248:8000/api/products/categories/
-        </Text>
+        <TouchableOpacity onPress={() => loadCategories()}>
+          <Text style={styles.retryText}>Presiona para reintentar</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Renderizado principal con lista de categorías
   return (
     <SafeAreaView style={styles.container}>
-    <View >
-      {/* Título de la pantalla */}
-      <Text style={styles.header}>Nuestras Categorías</Text>
-       <View className=''>
-            <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
-                            <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
-                                <IconArrowLeft color="#00732E"  />
-                            </TouchableOpacity>
-            </View>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <IconArrowLeft color="#00732E" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Nuestras Categorías</Text>
+        <View style={styles.headerRightPlaceholder} />
       </View>
-      {/* Lista optimizada de categorías */}
+
       <FlatList
-        data={categories} // Fuente de datos
-        keyExtractor={(item) => item.id.toString()} // Extrae keys únicas
-        renderItem={({ item }) => ( // Renderiza cada ítem
-          <Link href={`/categorias/${item.id}`} asChild>
-            <TouchableOpacity style={styles.categoryCard}>
-              <Text style={styles.categoryName}>{item.name}</Text>
-              {item.description && ( // Descripción condicional
-                <Text style={styles.categoryDescription}>{item.description}</Text>
-              )}
-              <Text style={styles.viewProductsText}>Ver productos →</Text>
-            </TouchableOpacity>
-          </Link>
-        )}
-        // Configuración de pull-to-refresh
+        data={categories}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        renderItem={({ item, index }) => {
+          // Normalizar el nombre de la categoría para hacer match
+          const categoryName = item.name.toLowerCase().trim();
+          let iconInfo = CATEGORY_ICONS['default'];
+          
+          // Buscar coincidencia exacta o parcial
+          for (const [key, value] of Object.entries(CATEGORY_ICONS)) {
+            if (categoryName.includes(key)) {
+              iconInfo = value;
+              break;
+            }
+          }
+          
+          const IconComponent = iconInfo.lib;
+          
+          return (
+            <Link href={`/categorias/${item.id}`} asChild>
+              <TouchableOpacity style={styles.categoryCard}>
+                <View style={[
+                  styles.iconContainer,
+                  { backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }
+                ]}>
+                  <IconComponent 
+                    name={iconInfo.icon} 
+                    size={32} 
+                    color="#00732E" 
+                  />
+                </View>
+                <View style={styles.categoryContent}>
+                  <Text style={styles.categoryName} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  
+                </View>
+              </TouchableOpacity>
+            </Link>
+          );
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => loadCategories(true)}
-            colors={['#007bff']}
+            colors={['#00732E']}
+            tintColor="#00732E"
           />
         }
-        // Componente para lista vacía
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No se encontraron categorías</Text>
           </View>
         }
+        contentContainerStyle={styles.listContent}
       />
-    </View>
     </SafeAreaView>
   );
 }
 
-/**
- * Objeto de estilos organizados con StyleSheet
- * @constant {Object} styles
- */
 const styles = StyleSheet.create({
-  // Contenedor principal
   container: {
-    flex: 1, // Ocupa todo el espacio disponible
-    padding: 16, // Espaciado interno
-    backgroundColor: '#f8f9fa' // Color de fondo
+    flex: 1,
+    backgroundColor: '#f8fafc'
   },
-  // Contenedor para centrar contenido
   centerContainer: {
     flex: 1,
-    justifyContent: 'center', // Centrado vertical
-    alignItems: 'center', // Centrado horizontal
-    padding: 20
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8fafc'
   },
-  // Estilo para el encabezado
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#343a40',
-    marginBottom: 20,
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0'
+  },
+  backButton: {
+    padding: 8
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
     textAlign: 'center'
   },
-  // Estilo para cada tarjeta de categoría
+  headerRightPlaceholder: {
+    width: 40
+  },
+  listContent: {
+    paddingHorizontal: 8,
+    paddingTop: 16,
+    paddingBottom: 24
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 8
+  },
   categoryCard: {
+    width: '48%',
     backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2, // Sombra en Android
-    shadowColor: '#000', // Sombra en iOS
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    alignItems: 'center',
+    paddingVertical: 16
   },
-  // Estilo para el nombre de categoría
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  categoryContent: {
+    alignItems: 'center',
+    paddingHorizontal: 8
+  },
   categoryName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#212529'
-  },
-  // Estilo para la descripción de categoría
-  categoryDescription: {
-    fontSize: 14,
-    color: '#6c757d',
-    marginTop: 4,
-    marginBottom: 8
-  },
-  // Estilo para el texto "Ver productos"
-  viewProductsText: {
-    color: '#007bff', // Color azul
-    fontSize: 14,
-    textAlign: 'right',
-    marginTop: 4
-  },
-  // Estilo para texto de carga
-  loadingText: {
-    marginTop: 10,
-    color: '#6c757d'
-  },
-  // Estilo para texto de error
-  errorText: {
-    color: '#dc3545', // Color rojo
     fontSize: 16,
-    marginBottom: 10,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
     textAlign: 'center'
   },
-  // Estilo para texto de reintentar
-  retryText: {
-    color: '#007bff',
-    fontSize: 16,
-    textDecorationLine: 'underline'
-  },
-  // Estilo para texto de URL
-  urlText: {
-    marginTop: 20,
-    color: '#6c757d',
+  productCount: {
     fontSize: 12,
-    fontFamily: 'monospace' // Fuente tipo código
+    color: '#64748b',
+    textAlign: 'center'
   },
-  // Contenedor para lista vacía
+  loadingText: {
+    marginTop: 12,
+    color: '#64748b',
+    fontSize: 14
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 16,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  retryText: {
+    color: '#00732E',
+    fontSize: 16,
+    fontWeight: '500',
+    padding: 8
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20
+    padding: 40,
+    width: '100%'
   },
-  // Texto para lista vacía
   emptyText: {
-    color: '#6c757d',
+    color: '#64748b',
     fontSize: 16
   }
 });

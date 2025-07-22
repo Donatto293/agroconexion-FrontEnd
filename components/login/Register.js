@@ -105,7 +105,7 @@ export default function Register() {
         
         // Si pasa la validación, enviar los datos al backend
         try {
-            const response = await fetch('http://192.168.20.35:8000/api/users/register/', {
+            const response = await fetch('http://192.168.0.248:8000/api/users/register/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

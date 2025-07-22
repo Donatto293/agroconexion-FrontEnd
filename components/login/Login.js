@@ -53,7 +53,7 @@ export default function Login() {
             }
             console.log('Login:', { username, password });
         try {
-            const response = await axios.post('http://192.168.20.35:8000/api/users/login/', {
+            const response = await axios.post('http://192.168.0.248:8000/api/users/login/', {
                 username,
                 password,
             });

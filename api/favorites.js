@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.20.35:8000/api/users/cart/favorites/';
+const API_URL = 'http://192.168.0.248:8000/api/users/cart/favorites/';
 
 
 export const getFavorites = async (token) => {
