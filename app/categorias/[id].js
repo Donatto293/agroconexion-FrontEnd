@@ -1,182 +1,198 @@
-/**
- * Módulo React para mostrar productos por categoría
- * @module CategoryProductsScreen
- */
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, FlatList, ActivityIndicator, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router'; // Añadido useRouter
 import { productsService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconArrowLeft } from '../../components/icons';
-import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
-/**
- * Componente que muestra los productos de una categoría específica
- * @function CategoryProductsScreen
- * @returns {JSX.Element} Componente React que renderiza la lista de productos
- */
+const PRODUCT_COLORS = ['#E6F9E6'];
+
 export default function CategoryProductsScreen() {
-  // Obtiene el parámetro de ID de categoría de la URL
   const { id } = useLocalSearchParams();
-  
-  // Estado para almacenar la lista de productos
+  const router = useRouter(); // Inicializado el router
   const [products, setProducts] = useState([]);
-  
-  // Estado para controlar el estado de carga
   const [loading, setLoading] = useState(true);
-  
-  // Estado para almacenar posibles errores
   const [error, setError] = useState(null);
-  const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
 
-  /**
-   * Efecto secundario que se ejecuta al montar el componente o cuando cambia el ID
-   * @effect
-   * @listens id
-   */
   useEffect(() => {
-    /**
-     * Función asíncrona para cargar los productos de la categoría
-     * @async
-     * @function loadProducts
-     */
     const loadProducts = async () => {
       try {
-        // Intenta obtener los productos del servicio
         const data = await productsService.getByCategory(id);
-        // Actualiza el estado con los productos obtenidos
         setProducts(data);
       } catch (err) {
-        // Captura y almacena cualquier error
         setError(err.message);
       } finally {
-        // Finaliza el estado de carga independientemente del resultado
         setLoading(false);
       }
     };
-
-    // Ejecuta la función de carga
     loadProducts();
-  }, [id]); // Dependencia: se vuelve a ejecutar cuando cambia el ID
+  }, [id]);
 
-  // Renderiza el indicador de carga si está cargando
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#00C49A" />
+        <Text style={styles.loadingText}>Cargando productos...</Text>
       </View>
     );
   }
 
-  // Renderiza el mensaje de error si existe
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>Error: {error}</Text>
       </View>
     );
   }
 
-  // Renderiza la lista de productos
   return (
-    <SafeAreaView style={styles.container}> 
-    <View>
-      <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
-                                              <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
-                                                  <IconArrowLeft color="#00732E"  />
-                                              </TouchableOpacity>
-                              </View>
-      {/* Título de la pantalla */}
-      <Text style={styles.title}>Productos</Text>
-      
-      {/* Lista de productos */}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#00732E" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>hola </Text>
+        <View style={styles.headerRightPlaceholder} />
+      </View>
+
       <FlatList
-        // Datos a renderizar
         data={products}
-        // Función para generar claves únicas
         keyExtractor={(item) => item.id.toString()}
-        // Función para renderizar cada ítem
-        renderItem={({ item }) => (
-          <View style={styles.productCard}>
-            {/* Nombre del producto */}
-            <Text style={styles.productName}>{item.name}</Text>
-            {/* Precio del producto */}
-            <Text style={styles.productPrice}>${item.price}</Text>
-            {/* Descripción del producto (si existe) */}
-            {item.description && (
-              <Text style={styles.productDescription}>{item.description}</Text>
-            )}
-          </View>
-        )}
-        // Componente a mostrar cuando la lista está vacía
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {}}
+            colors={['#00C49A']}
+            tintColor="#00C49A"
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text>No hay productos en esta categoría</Text>
+            <Text style={styles.emptyText}>No hay productos en esta categoría</Text>
           </View>
         }
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item, index }) => (
+          <View style={styles.cardWrapper}>
+            <LinearGradient
+              colors={[PRODUCT_COLORS[index % PRODUCT_COLORS.length], '#ffffff']}
+              style={styles.productCard}
+            >
+              <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.productPrice}>${item.price}</Text>
+              {item.description && (
+                <Text style={styles.productDescription} numberOfLines={2}>{item.description}</Text>
+              )}
+            </LinearGradient>
+          </View>
+        )}
       />
-    </View>
     </SafeAreaView>
   );
 }
 
-/**
- * Objeto de estilos para el componente
- * @constant {Object} styles
- */
 const styles = StyleSheet.create({
-  // Contenedor principal
   container: {
-    flex: 1, // Ocupa todo el espacio disponible
-    padding: 16, // Relleno interno
-    backgroundColor: '#fff' // Fondo blanco
+    flex: 1,
+    backgroundColor: '#f6fcf8',
+    paddingHorizontal: 12
   },
-  // Contenedor centrado (para carga y errores)
+  header: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginVertical: 16
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0'
+  },
+  backButton: {
+    padding: 8
+  },
+  headerRightPlaceholder: {
+    width: 40
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
+    textAlign: 'center'
+  },
   centerContainer: {
-    flex: 1, // Ocupa todo el espacio disponible
-    justifyContent: 'center', // Centra verticalmente
-    alignItems: 'center' // Centra horizontalmente
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  // Estilo para el título
-  title: {
-    fontSize: 24, // Tamaño de fuente
-    fontWeight: 'bold', // Negrita
-    marginBottom: 16 // Margen inferior
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#64748b'
   },
-  // Estilo para la tarjeta de producto
-  productCard: {
-    backgroundColor: '#f8f9fa', // Color de fondo
-    padding: 16, // Relleno interno
-    marginBottom: 12, // Margen inferior
-    borderRadius: 8 // Bordes redondeados
-  },
-  // Estilo para el nombre del producto
-  productName: {
-    fontSize: 18, // Tamaño de fuente
-    fontWeight: '600' // Seminegrita
-  },
-  // Estilo para el precio del producto
-  productPrice: {
-    fontSize: 16, // Tamaño de fuente
-    color: 'green', // Color verde
-    marginTop: 4 // Margen superior
-  },
-  // Estilo para la descripción del producto
-  productDescription: {
-    fontSize: 14, // Tamaño de fuente
-    color: '#666', // Color gris
-    marginTop: 8 // Margen superior
-  },
-  // Estilo para el texto de error
   errorText: {
-    color: 'red', // Color rojo
-    fontSize: 16 // Tamaño de fuente
+    fontSize: 16,
+    color: '#dc2626',
+    textAlign: 'center'
   },
-  // Estilo para el contenedor vacío
+  columnWrapper: {
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8
+  },
+  listContent: {
+    paddingBottom: 32
+  },
+  cardWrapper: {
+    height: 100,
+    width: '48%',
+    marginBottom: 18
+  },
+  productCard: {
+    borderRadius: 14,
+    height: '100%',
+    width: '100%',
+    paddingVertical: '2%',
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 4
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    textAlign: 'center',
+    marginBottom: 4
+  },
+  productPrice: {
+    fontSize: 14,
+    color: '#00C49A',
+    fontWeight: '500',
+    marginBottom: 4
+  },
+  productDescription: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+  },
   emptyContainer: {
-    flex: 1, // Ocupa todo el espacio disponible
-    justifyContent: 'center', // Centra verticalmente
-    alignItems: 'center', // Centra horizontalmente
-    padding: 20 // Relleno interno
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#64748b'
   }
 });
