@@ -1,23 +1,29 @@
 import useProducts from '../api/products';
-import { View,  ActivityIndicator, Image, StyleSheet, Pressable, FlatList } from 'react-native';
-import { Link } from 'expo-router';
+import { View, ActivityIndicator, Image, Dimensions, Pressable, StyleSheet } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { useRouter } from 'expo-router';
-import { Dimensions } from 'react-native';
-import { TouchableRipple, Portal, Modal, Text, Button, Provider } from 'react-native-paper';
-
-import React, { useContext, useEffect, useState } from 'react';
+import { TouchableRipple, Dialog, Portal, Modal, Text, Button, Provider } from 'react-native-paper';
+import { useAuth } from '../context/authContext';
+import { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../context/cartContext';
 import { FavoritesContext } from '../context/favoritesContext';
-import { IconPlus, IconFav, IconFavnot } from './icons';
-import { useAuth } from '../context/authContext';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
+import { IconPlus, IconFav, IconFavnot } from './icons';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import api from '../utils/axiosInstance';
+
+const API_URL = api.defaults.baseURL; // 🔁 Cambia por tu IP local o dominio backend
 
 export default function ProductSmall({ products, loading, error }) {
+  const router = useRouter();
+  const { addToCart } = useContext(CartContext);
+  const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
+  const width = Dimensions.get('window').width;
+  const { user } = useAuth();
+  //modal para los iconos de fav y carrito
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
-
+  
   const showLoginAlert = (message) => {
     setModalMessage(message);
     setShowModal(true);
@@ -31,13 +37,11 @@ export default function ProductSmall({ products, loading, error }) {
   };
 })
 
-  const hideModal = () => setShowModal(false);
+const hideModal = () => setShowModal(false);
+
+
   
-  const { user } = useAuth();
-  const router = useRouter();
-  const {addToCart} = useContext(CartContext);
-  const {favorites, addFavorite, removeFavorite} = useContext(FavoritesContext);
-  const width = Dimensions.get('window').width;
+  
 // Estado para manejar favoritos individualmente
   const [favoritesState, setFavoritesState] = useState({});
   const [isProcessing, setIsProcessing] = useState(false); // para evitar múltiples clics
@@ -49,23 +53,13 @@ export default function ProductSmall({ products, loading, error }) {
       if (fav.product?.id) {
         updatedState[fav.product.id] = true;
       }
-      });
-      setFavoritesState(updatedState);
-    }, [favorites]);
-  if (loading) return <ActivityIndicator size="large" color="#00732E" />;
-  if (error) return <Text className="text-red-500">{error}</Text>;
- 
-return (
-  <View>
-    <Carousel
-      width={width}
-      height={300}
-      data={products}
-      autoPlay
-      scrollAnimationDuration={3000}
-      renderItem={({ item: product }) => {
-        const isFavorite = favoritesState[product.id] === true;
+    });
+    setFavoritesState(updatedState);
+  }, [favorites]);
 
+  if (loading) return <ActivityIndicator size="large" color="#00732E" />;
+  if (error) return <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>;
+  
         const handleToggleFavorite = async () => {
           if (!user) {
             showLoginAlert('Debes iniciar sesión para agregar a favoritos');
@@ -82,10 +76,23 @@ return (
             ...prev,
             [product.id]: !isFavorite
           }));
-        };
+        }
+  return (
+    <Carousel
+      width={width}
+      height={300}
+      data={products}
+      autoPlay
+      scrollAnimationDuration={3000}
+      renderItem={({ item: product }) => {
+        const isFavorite = favoritesState[product.id] === true;
+        const imageUrl = product.images?.[0]?.image
+          ? `${API_URL}${product.images[0].image}`
+          : 'https://via.placeholder.com/150'; // Si quieres evitar vacíos
+
 
         return (
-          <View className="bg-white mx-2 p-4 rounded-xl shadow justify-center items-center">
+          <View style={{ backgroundColor: 'white', margin: 8, padding: 16, borderRadius: 12, shadowColor: '#000', elevation: 3 }}>
             <TouchableRipple
               onPress={() => {
                 if (!user) return showLoginAlert('Debes iniciar sesión para agregar al carrito');
@@ -95,20 +102,19 @@ return (
               onPressOut={() => (scale.value = withSpring(1))}
               rippleColor="rgba(0, 115, 46, 0.3)"
               borderless
-              style={{ position: 'absolute', top: 10, right: 10, borderRadius: 999 }}
+              style={{ position: 'absolute', top: 10, right: 10, borderRadius: 999, zIndex: 10 }}
             >
               <Animated.View style={[animatedStyle, { backgroundColor: '#00732E', padding: 8, borderRadius: 999 }]}>
                 <IconPlus size={24} color="white" />
               </Animated.View>
             </TouchableRipple>
 
-            {/* BOTÓN FAVORITOS (esquina inferior derecha) */}
             <TouchableRipple
-              onPress={handleToggleFavorite}
+              onPress={() => handleToggleFavorite(product)}
               
               rippleColor="rgba(255, 0, 0, 0.2)"
               borderless
-              style={{ position: 'absolute', bottom: 10, right: 10, borderRadius: 999 }}
+              style={{ position: 'absolute', bottom: 10, right: 10, borderRadius: 999, zIndex:10 }}
             >
               <View className="bg-white p-2 rounded-full border border-red-300">
                {isFavorite ? (
@@ -120,44 +126,48 @@ return (
               </View>
             </TouchableRipple>
 
-            <Pressable  onPress={() =>
-                                  router.push({
-                                    pathname: `/${product.id}`,
-                                    params: { product: JSON.stringify(product) }
-                                  })
-                                } >
-              <Text className="text-xl font-semibold mb-2">{product.title}</Text>
-              <Image
-                source={{ uri: product.image }}
-                className="w-full h-40 rounded mb-2"
-                resizeMode="cover"
-              />
-              <Text className="text-green-600 font-bold">${product.price}</Text>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: `/${product.id}`,
+                  params: { product: JSON.stringify(product) }
+                })
+              }
+            >
+              <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>{product.name}</Text>
+              {imageUrl && (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={{
+                    width: '100%',
+                    height: 160,
+                    borderRadius: 8,
+                    backgroundColor: '#f3f3f3',
+                    marginBottom: 12,
+                    resizeMode: 'cover'
+                  }}
+                />
+              )}
+              <Text style={{ color: '#00732E', fontSize: 16, fontWeight: 'bold' }}>${product.price}</Text>
             </Pressable>
+             <Portal>
+              <Dialog visible={showModal} onDismiss={hideModal} >
+                <Dialog.Title>Atención</Dialog.Title>
+                <Dialog.Content>
+                  <Text>{modalMessage}</Text>
+                </Dialog.Content>
+                <Dialog.Actions>
+                  <Button onPress={hideModal}>Cerrar</Button>
+                </Dialog.Actions>
+              </Dialog>
+            </Portal>
+  
           </View>
+          
         );
       }}
     />
-    <Portal>
-      <Modal
-        visible={showModal}
-        onDismiss={hideModal}
-        contentContainerStyle={{
-          backgroundColor: 'white',
-          padding: 20,
-          margin: 20,
-          borderRadius: 12,
-        }}
-      >
-        <Text style={{ fontSize: 18, marginBottom: 20 }}>{modalMessage}</Text>
-        <Button mode="contained" onPress={hideModal} buttonColor="#00732E">
-          Cerrar
-        </Button>
-      </Modal>
-    </Portal>
-  </View>
-);
+      
 
-
+  );
 }
-

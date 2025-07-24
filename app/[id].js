@@ -3,21 +3,28 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import useProducts from '../api/products';
 import { useContext, useState, useEffect } from 'react';
 import { CartContext } from '../context/cartContext';
-import { FavoritesContext } from '../context/favoritesContext'
+import { FavoritesContext } from '../context/favoritesContext';
 import { IconFav, IconFavnot } from '../components/icons';
-import { Icon } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ImageViewing from 'react-native-image-viewing';
+import api from '../utils/axiosInstance';
+
+
+const API_URL = api.defaults.baseURL; // Cambia por tu IP o dominio backend
 
 export default function ProductDetail() {
-  const { id } = useLocalSearchParams();     // recibimos solo el ID
+  const { id } = useLocalSearchParams();
   const { products, loading, error } = useProducts();
   const { addToCart } = useContext(CartContext);
-   const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
+  const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
   const router = useRouter();
 
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-    // Verificamos si está en favoritos (al montar o cuando cambia)
+  const [visible, setVisible] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const productData = products.find(p => String(p.id) === id);
+
   useEffect(() => {
     if (productData) {
       const exists = favorites.some(fav => fav.product.id === productData.id);
@@ -26,76 +33,110 @@ export default function ProductDetail() {
   }, [favorites, productData]);
 
   const handleToggleFavorite = async () => {
-
-
     if (isFavorite) {
       await removeFavorite(productData.id);
     } else {
       await addFavorite(productData.id);
     }
-
-    // Invertir el estado local manualmente para mostrar efecto inmediato
     setIsFavorite(!isFavorite);
   };
+
   if (loading) return <ActivityIndicator size="large" color="#00732E" />;
-  if (error) return <Text className="text-red-500">{error}</Text>;
-
-  // Buscamos el producto por id (asegúrate de comparar strings)
-  const productData = products.find(p => String(p.id) === id);
-
-
+  if (error) return <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>;
   if (!productData) {
     return (
-      <View className="flex-1 justify-center items-center">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Text>Producto no encontrado.</Text>
       </View>
     );
   }
-  
+
+  // Crear arreglo de imágenes para la galería
+  const galleryImages = productData.images?.map(img => ({
+    uri: `${API_URL}${img.image}`
+  })) || [];
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-    <ScrollView className="flex-1 bg-gray-100 p-4">
-      <TouchableOpacity onPress={() => router.back()} className="mb-4">
-        <Text className="text-blue-500">← Volver</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-          onPress={handleToggleFavorite}
-        
-          className="absolute top-12 right-4 z-10 bg-white p-2 rounded-full shadow"
-        >
-         {isFavorite ? (
-          <IconFavnot size={24} color="gray" />
-            
-          ) : (
-            <IconFav size={24} color="red" />
-            
-          )}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 16 }}>
+          <Text style={{ color: '#00732E' }}>← Volver</Text>
         </TouchableOpacity>
-
-      <View className="bg-white p-4 rounded-lg shadow-sm">
-        <Image 
-          source={{ uri: productData.image }} 
-          className="w-full h-64 rounded-lg mb-4"
-          resizeMode="contain"
-        />
-
-        <Text className="text-2xl font-bold mb-2">{productData.title}</Text>
-        <Text className="text-gray-600 text-base mb-4">{productData.description}</Text>
-        <Text className="text-green-600 text-xl font-bold mb-4">
-          ${productData.price}
-        </Text>
 
         <TouchableOpacity
-          onPress={() => addToCart(productData)}
-          className="bg-[#00732E] py-3 px-4 rounded mt-4"
+          onPress={handleToggleFavorite}
+          style={{
+            position: 'absolute',
+            top: 20,
+            right: 16,
+            zIndex: 10,
+            backgroundColor: '#fc7070ff',
+            padding: 8,
+            borderRadius: 100,
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowOffset: { width: 0, height: 2 }
+          }}
         >
-          <Text className="text-white text-center font-bold text-lg">
-            Añadir al carrito
-          </Text>
+          {isFavorite ? <IconFavnot size={24} color="gray" /> : <IconFav size={24} color="red" />}
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        <View style={{ backgroundColor: '#ffffff', padding: 16, borderRadius: 12, elevation: 2 }}>
+          {/* Imágenes del producto */}
+          {productData.images?.length > 0 && productData.images.map((img, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                setActiveImageIndex(index);
+                setVisible(true);
+              }}
+            >
+              <Image
+                source={{ uri: `${API_URL}${img.image}` }}
+                style={{
+                  width: '100%',
+                  height: 200,
+                  borderRadius: 12,
+                  marginBottom: 12,
+                  resizeMode: 'cover',
+                  backgroundColor: '#f9f9f9'
+                }}
+              />
+            </TouchableOpacity>
+          ))}
+
+          <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 8 }}>
+            {productData.name}
+          </Text>
+          <Text style={{ fontSize: 15, color: '#4b5563', marginBottom: 16, lineHeight: 22 }}>
+            {productData.description}
+          </Text>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#00732E', marginBottom: 16 }}>
+            ${productData.price}
+          </Text>
+
+          <TouchableOpacity
+            
+            style={{
+              backgroundColor: '#00732E',
+              paddingVertical: 12,
+              borderRadius: 8
+            }}
+          >
+            <Text style={{ color: 'white', textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>
+              Añadir al carrito
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Vista ampliada de imágenes */}
+      <ImageViewing
+        images={galleryImages}
+        imageIndex={activeImageIndex}
+        visible={visible}
+        onRequestClose={() => setVisible(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/authContext';
 import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
+import api from '../../utils/axiosInstance';
 
 export default function Login() {
 
@@ -64,7 +65,7 @@ export default function Login() {
             }
             
         try {
-            const response = await axios.post('http://192.168.20.35:8000/api/users/login/', {
+            const response = await api.post('/api/users/login/', {
                 username,
                 password,
             });

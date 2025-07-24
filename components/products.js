@@ -1,13 +1,23 @@
 import { View, Text, ActivityIndicator, ScrollView, Image, StyleSheet, Pressable } from 'react-native';
 import useProducts from '../api/products';
 import { useRouter, Link } from 'expo-router';
+import { SearchContext } from '../context/SearchContext';
+import { useContext } from 'react';
 import api from '../utils/axiosInstance';
 
+
 export default function Products() {
+
    
     const API_URL= api.defaults.baseURL;
     const router = useRouter();
     const { products, loading, error } = useProducts();
+
+    const { searchQuery } = useContext(SearchContext);
+
+    const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+    );
     if (loading) {
         return <ActivityIndicator size="large" color="#00732E" />;
     }
@@ -20,10 +30,14 @@ export default function Products() {
     }
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <Text style={styles.mainTitle}>Lista de Productos</Text>
+              <Text style={styles.mainTitle}>
+                    {searchQuery ? `Resultados para: "${searchQuery}"` : 'Lista de Productos'}
+                </Text>
+            
+
 
             <View style={styles.productsGrid}>
-                {products.map((product) => {
+                {filteredProducts.map((product) => {
                     const hasImage = product.images?.[0]?.image;
 
                     return (

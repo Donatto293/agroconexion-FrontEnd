@@ -2,7 +2,7 @@ import axios from 'axios';
 import api from '../utils/axiosInstance';
 
 
-const API_URL = '/users/cart/favorites/';
+const API_URL = '/api/users/cart/favorites/';
 
 export const getFavorites = async (token) => {
   const response = await api.get(API_URL, {

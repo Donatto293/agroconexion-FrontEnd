@@ -2,8 +2,11 @@ import { Text, View, TouchableOpacity, Alert, ScrollView} from "react-native";
 import { useState , useRef} from "react";
 import { useRouter } from 'expo-router';
 import { IconArrowLeft } from "../icons";
-import { TextInput } from 'react-native-paper'; 
+import { TextInput } from 'react-native-paper';
+import api from "../../utils/axiosInstance";
+
 export default function Register() {
+    const ip = api.defaults.baseURL
 
 
     const router = useRouter();
@@ -105,7 +108,7 @@ export default function Register() {
         
         // Si pasa la validación, enviar los datos al backend
         try {
-            const response = await fetch('http://192.168.20.35:8000/api/users/register/', {
+            const response = await fetch(`${ip}/api/users/register/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

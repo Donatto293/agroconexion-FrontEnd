@@ -10,6 +10,9 @@ import { useSessionSync } from "../hooks/useSessionSync";
 import { useEffect, useState } from "react";
 import { ActivityIndicator } from "react-native-paper";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SearchProvider } from "../context/SearchContext";
+
+
 
 export default function Layout(){
 
@@ -59,33 +62,25 @@ export default function Layout(){
 }
   return(
     <SafeAreaProvider>
-       
-        
-         
-            <AuthProvider>
-              <CartProvider>
-                <FavoritesProvider>
-                  <PaperProvider>
-                     <SessionSyncWrapper>
-                      <View className="flex-1">
-
-                        <Stack
-                          screenOptions={
-                            {
-                                headerShown: false,
-
-                          }
-
-                        }
-                      />
-                    </View>
-                  </SessionSyncWrapper>
-                </PaperProvider>
-              </FavoritesProvider>
-            </CartProvider>
-          </AuthProvider>
-        
-
-    </SafeAreaProvider>
+    <PaperProvider>
+      <AuthProvider>
+        <SearchProvider>
+          <CartProvider>
+            <FavoritesProvider>
+              <SessionSyncWrapper>
+                <View className="flex-1">
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  />
+                </View>
+              </SessionSyncWrapper>
+            </FavoritesProvider>
+          </CartProvider>
+        </SearchProvider>
+      </AuthProvider>
+    </PaperProvider>
+  </SafeAreaProvider>
     )
 }
