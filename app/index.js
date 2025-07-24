@@ -8,11 +8,12 @@ import ProductSmall from "../components/productSmall";
 import useProducts from "../api/products";
 import Products from "../components/products";
 
-
 export default function Index() {
+    
     const { products, loading, error } = useProducts();
-return (
-    <SafeAreaView className="flex-1 justify-center items-center bg-gray-100" edges={['top', 'bottom']}> 
+   
+    return (
+        <SafeAreaView className="flex-1 justify-center items-center bg-gray-100" edges={['top', 'bottom']}>
         <View className="position-absolute w-full h-50 bg-[#00732E]">
             <Header />
         </View>

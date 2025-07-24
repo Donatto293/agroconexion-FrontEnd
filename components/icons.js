@@ -27,3 +27,4 @@ export const IconPlus =() =><Entypo name="plus" size={24} color="black" />
 export const IconFav =() =><AntDesign name="hearto" size={24} color="red" />
 export const IconFavnot =() =><Ionicons name="heart-dislike-outline" size={24} color="red" />
 export const IconBee =() => <MaterialCommunityIcons name="bee" size={24} color="black" />
+export const IconTrash=()=> <EvilIcons name="trash" size={24} color="black" />

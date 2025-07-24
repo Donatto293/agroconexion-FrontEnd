@@ -1,23 +1,17 @@
 import axios from 'axios';
-
+import api from '../utils/axiosInstance';
 /**
  * URL base de la API del backend Django
  * @constant {string}
  */
-const API_BASE_URL = 'http://192.168.20.35:8000/api'; // Sin barra final
+
+const API_BASE_URL = '/api'; // Sin barra final
 
 /**
  * Instancia configurada de axios para todas las peticiones HTTP
  * @constant {AxiosInstance}
  */
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000, // 10 segundos de timeout
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  }
-});
+
 
 /**
  * Servicio para manejar operaciones relacionadas con categorías
@@ -34,7 +28,7 @@ export const categoriesService = {
   getAll: async () => {
     try {
       // Realiza petición GET al endpoint de categorías
-      const response = await api.get('/products/categories/');
+      const response = await api.get(`${API_BASE_URL}/products/categories/`);
       
       // Verifica que la respuesta sea un array
       if (!Array.isArray(response.data)) {
@@ -76,7 +70,7 @@ export const productsService = {
   getByCategory: async (categoryId) => {
     try {
       // Realiza petición GET con parámetro de categoría
-      const response = await api.get('/products/list-products/', {
+      const response = await api.get(`${API_BASE_URL}/products/list-products/`, {
         params: {
           category: categoryId
         }
@@ -115,7 +109,7 @@ export const productsService = {
   getProductDetail: async (productId) => {
     try {
       // Realiza petición GET al endpoint de detalle de producto
-      const response = await api.get(`/product/${productId}/`);
+      const response = await api.get(`${API_BASE_URL}/product/${productId}/`);
       return response.data;
     } catch (error) {
       // Log detallado del error

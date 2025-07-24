@@ -1,13 +1,57 @@
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useContext } from 'react';
+import { View, Text, FlatList, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import {  memo, useContext, useCallback } from 'react';
 import { Link } from 'expo-router';
 import { CartContext } from '../context/cartContext';
-import {loadCart} from '../context/cartContext';
 import { IconArrowLeft } from '../components/icons';
 import { useRouter } from 'expo-router';
-export default function CartScreen() {
-  const { cart, removeFromCart, clearCart, total } = useContext(CartContext);
-    const router = useRouter();
+import { IconTrash } from '../components/icons';
+import { createInvoiceFromCart } from '../api/invoices';
+ 
+
+const CartScreen = memo(() => {
+  const { cart, removeFromCart, clearCart, total, resetCart } = useContext(CartContext)
+  const router = useRouter();
+
+  const handleRemove = useCallback(() => {
+    Alert.alert(
+      "¿Vaciar carrito?",
+      "Esta acción no se puede deshacer.",
+      [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Eliminar", onPress: () => clearCart() }
+    ]
+  );
+}, []);
+
+    const handleCheckout = useCallback(async() => {
+    if (cart.length === 0) {
+      Alert.alert("Carrito vacío", "Agrega productos al carrito antes de proceder.");
+      return;
+    }
+    try {
+        const invoice = await createInvoiceFromCart();
+        console.log("Factura creada:", invoice);
+        Alert.alert(
+            'Compra exitosa',
+            `Factura #${invoice.id} creada correctamente.`,
+            [
+                {
+                text: 'Ver factura',
+                onPress: () => router.push(`/invoice/${invoice.id}`)
+                },
+                { text: 'Cerrar', style: 'cancel' }
+            ]
+            );
+
+        // Limpias el carrito tras crear la factura
+
+        resetCart()
+        console.log(("despues de compraarr"))
+        } catch (err) {
+            console.error(err);
+            Alert.alert({ message: err.response?.data.detail || 'Error al generar factura', type: 'danger' });
+            }
+        }, [cart, clearCart, router]);
 
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">
@@ -45,7 +89,7 @@ export default function CartScreen() {
                         onPress={() => removeFromCart(item.product.id)}
                         className="mt-2"
                     >
-                        <Text className="text-red-500">Quitar</Text>
+                        <IconTrash />
                     </TouchableOpacity>
                     </View>
                 )}
@@ -57,12 +101,18 @@ export default function CartScreen() {
                 </Text>
             </View>
 
-            <TouchableOpacity onPress={clearCart} className="mt-6 p-3 bg-red-200 rounded">
+            <TouchableOpacity onPress={handleRemove} className="mt-6 p-3 bg-red-200 rounded">
                 <Text className="text-center text-red-700 font-bold">Vaciar carrito</Text>
+            </TouchableOpacity>
+
+             <TouchableOpacity onPress={handleCheckout} className="mt-6 p-3 bg-yellow-200 rounded">
+                <Text className="text-center text-yellow-700 font-bold">Proceder al pago</Text>
             </TouchableOpacity>
             </>
         )}
         </View>
     </SafeAreaView>
   );
-}
+});
+
+export default CartScreen;

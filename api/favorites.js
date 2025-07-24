@@ -1,16 +1,18 @@
 import axios from 'axios';
+import api from '../utils/axiosInstance';
 
-const API_URL = 'http://192.168.20.35:8000/api/users/cart/favorites/';
+
+const API_URL = '/users/cart/favorites/';
 
 export const getFavorites = async (token) => {
-  const response = await axios.get(API_URL, {
+  const response = await api.get(API_URL, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 };
 
 export const addFavoriteAPI = async (productId, token) => {
-  const response = await axios.post(API_URL, 
+  const response = await api.post(API_URL, 
     { product_id: productId }, 
     { headers: { Authorization: `Bearer ${token}` } }
   );
@@ -18,7 +20,7 @@ export const addFavoriteAPI = async (productId, token) => {
 };
 
 export const removeFavoriteAPI = async (productId, token) => {
-  const response = await axios.delete(`${API_URL}${productId}/`, {
+  const response = await api.delete(`${API_URL}${productId}/`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;

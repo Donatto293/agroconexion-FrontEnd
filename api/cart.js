@@ -1,9 +1,10 @@
 import axios from 'axios';
+import api from '../utils/axiosInstance'
 
-const API_URL = 'http://192.168.20.35:8000/api/users/cart/user/cart/';
+const API_URL = 'api/users/cart/user/cart/';
 //cargar carrito
 export async function getCartAPI(token) {
-    const response = await axios.get(API_URL, {
+    const response = await api.get(API_URL, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
@@ -11,16 +12,15 @@ export async function getCartAPI(token) {
 
 //agregar al carrito
 export async function addToCartAPI(productId, quantity, token) {
-    const response = await axios.post(API_URL, { product_id: productId, quantity }, {
+    const response = await api.post(API_URL, { product_id: productId, quantity }, {
         headers: { Authorization: `Bearer ${token}` }
     });
     return response.data;
 }
 
 export async function removeFromCartAPI(productId, token) {
-   const url = `http://192.168.20.35:8000/api/users/cart/cart/${productId}/`;
 
-  const response = await axios.delete(url, {
+  const response = await api.delete(`/users/cart/cart/${productId}/`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data ?? {};

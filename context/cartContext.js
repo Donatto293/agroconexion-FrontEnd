@@ -51,6 +51,10 @@ export const CartProvider = ({ children }) => {
   // Cargar carrito del servidor
   const loadCart = async () => {
     const token = await AsyncStorage.getItem("accessToken");
+    if (!token) {
+      console.warn("No token disponible para cargar el carrito");
+      return;
+    }
     try {
       const data = await getCartAPI(token);
       setCart(data.products);
@@ -94,6 +98,7 @@ export const CartProvider = ({ children }) => {
   // Eliminar producto del carrito
   const removeFromCart = async (productId) => {
     const token = await AsyncStorage.getItem("accessToken");
+    if (!token) return;
     try {
       await removeFromCartAPI(productId, token);
       await loadCart();
@@ -116,6 +121,8 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const resetCart = () => setCart([]);
+
   return (
     <CartContext.Provider value={{ 
       cart,
@@ -130,7 +137,8 @@ export const CartProvider = ({ children }) => {
       clearCart,
       loadCart,
       applyCoupon,
-      removeCoupon
+      removeCoupon,
+      resetCart
     }}>
       {children}
     </CartContext.Provider>

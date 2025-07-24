@@ -1,8 +1,11 @@
 import { View, Text, ActivityIndicator, ScrollView, Image, StyleSheet, Pressable } from 'react-native';
 import useProducts from '../api/products';
 import { useRouter, Link } from 'expo-router';
+import api from '../utils/axiosInstance';
 
 export default function Products() {
+   
+    const API_URL= api.defaults.baseURL;
     const router = useRouter();
     const { products, loading, error } = useProducts();
     if (loading) {
@@ -18,35 +21,42 @@ export default function Products() {
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <Text style={styles.mainTitle}>Lista de Productos</Text>
-            
+
             <View style={styles.productsGrid}>
-                {products.map((product) => (
-                    <Link key={product.id} href={`/${product.id}`} asChild>
-                        <Pressable style={styles.productCard}>
-                            <View style={styles.cardContent}>
-                                <Image 
-                                    source={{ uri: product.image }} 
-                                    style={styles.productImage} 
-                                />
-                                <View style={styles.textContainer}>
-                                    <Text style={styles.productTitle} numberOfLines={1}>
-                                        {product.title}
-                                    </Text>
-                                    <Text style={styles.productDescription} numberOfLines={2}>
-                                        {product.description}
-                                    </Text>
-                                    <Text style={styles.productPrice}>
-                                        ${product.price}
-                                    </Text>
+                {products.map((product) => {
+                    const hasImage = product.images?.[0]?.image;
+
+                    return (
+                        <Link key={product.id} href={`/${product.id}`} asChild>
+                            <Pressable style={styles.productCard}>
+                                <View style={styles.cardContent}>
+                                    {hasImage && (
+                                        <Image
+                                            source={{ uri: `${API_URL}${product.images[0].image}` }}
+                                            style={styles.productImage}
+                                        />
+                                    )}
+                                    <View style={styles.textContainer}>
+                                        <Text style={styles.productTitle} numberOfLines={1}>
+                                            {product.name}
+                                        </Text>
+                                        <Text style={styles.productDescription} numberOfLines={2}>
+                                            {product.description}
+                                        </Text>
+                                        <Text style={styles.productPrice}>
+                                            ${product.price}
+                                        </Text>
+                                    </View>
                                 </View>
-                            </View>
-                        </Pressable>
-                    </Link>
-                ))}
+                            </Pressable>
+                        </Link>
+                    );
+                })}
             </View>
         </ScrollView>
     );
-};
+
+}
 
 const styles = StyleSheet.create({
     scrollContainer: {

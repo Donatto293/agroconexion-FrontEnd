@@ -1,14 +1,28 @@
 import { View, Text, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useContext } from 'react';
+import { useContext, useCallback, memo } from 'react';
 import { Link } from 'expo-router';
 
 import { FavoritesContext } from '../context/favoritesContext';
 import { IconArrowLeft } from '../components/icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../context/authContext';
 
-export default function FavoritesScreen() {
-  const { favorites, removeFavorite, fetchFavorites } = useContext(FavoritesContext);
+const FavoritesScreen = memo(() => {
+  const { favorites, removeFavorite } = useContext(FavoritesContext);
   const router = useRouter();
+  const { user } = useAuth();
+
+  const handleRemove = useCallback((productId) => {
+    removeFavorite(productId);
+  }, []);
+
+  if (!user) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+        <Text className="text-lg text-center text-red-500">Debes iniciar sesión para ver tus favoritos</Text>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">
       <View className="flex-1 p-4 bg-white">
@@ -56,4 +70,6 @@ export default function FavoritesScreen() {
       </View>
     </SafeAreaView>
   );
-}
+});
+
+export default FavoritesScreen;

@@ -1,17 +1,28 @@
 import {Text, View, TouchableOpacity} from 'react-native';
-import {useState} from 'react';
+import {useState, useContext } from 'react';
 import { IconArrowLeft, EyeWithLine } from "../icons";
 import { Link, useRouter } from 'expo-router';
 import { TextInput } from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/authContext';
+import { CartContext } from '../../context/cartContext';
+import { FavoritesContext } from '../../context/favoritesContext';
 
 export default function Login() {
 
+    // Contexto de autenticación
+    const { login } = useAuth();
+
+    const { loadCart } = useContext(CartContext);
+    const { fetchFavorites } = useContext(FavoritesContext);
+
+    // Estados para manejar el formulario
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    
+    const [isLoading, setIsLoading] = useState(false); // Estado de carga
+  
 
 
     
@@ -51,26 +62,40 @@ export default function Login() {
             if (!isValid) {
                 return; // salirse si no pasa la validación
             }
-            console.log('Login:', { username, password });
+            
         try {
             const response = await axios.post('http://192.168.20.35:8000/api/users/login/', {
                 username,
                 password,
             });
-            console.log('Login Response:', response.data);
+            
 
             const { access, refresh, userName, userImage } = response.data;
 
-            await AsyncStorage.setItem('accessToken', access);
-            await AsyncStorage.setItem('refreshToken', refresh);
-            // por si acaso 
-            if (userName) {
-                await AsyncStorage.setItem('username', userName);
-                await AsyncStorage.setItem('avatar', userImage);
-            }
-           
+            // Guardar tokens y datos de usuario
+      await AsyncStorage.multiSet([
+        ['accessToken', access],
+        ['refreshToken', refresh],
+        ['username', userName],
+        ['avatar', userImage || '']
+      ]);
 
-            router.push('/');
+      // Actualizar contexto de autenticación
+      login({ 
+        username: userName, 
+        avatar: userImage,
+        token: access
+      });
+
+      // Cargar datos dependientes de la sesión
+      await Promise.all([
+        loadCart(),
+        fetchFavorites()
+      ]);
+
+      // Redirigir al inicio
+      router.replace('/');
+ 
          } catch (error) {
             // Manejo de errores de la petición
             setErrors(prev => ({
@@ -80,9 +105,9 @@ export default function Login() {
             console.error(error);
         }
     };
-    
-
+   
     return (
+        
         // Encabezado
         <View className='flex-1  bg-white'>
             <View className="bg-[#9e9fa0] w-20 h-16 justify-center items-center  rounded-lg  ">

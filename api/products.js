@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { ActivityIndicator } from 'react-native';
+import api from '../utils/axiosInstance';
 
-const API_URL ='http://192.168.20.35:8000/api/products/list-products/';
+const API_URL ='/api/products/list-products/';
 
 export default function useProducts() {
     const [products, setProducts] = useState([]);
@@ -12,7 +13,7 @@ export default function useProducts() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get(API_URL);
+                const response = await api.get(API_URL);
                 setProducts(response.data);
             } catch (err) {
                 setError(err.message || 'Error cargando productos');

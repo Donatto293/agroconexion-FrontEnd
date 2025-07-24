@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect, useContext, use } from 'react';
 import {
   Animated,
   View,
@@ -23,30 +23,29 @@ import { Link, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
+import { useAuth } from '../../context/authContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function Menu() {
+  const {logout, user} = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [username, setUsername] = useState(null);
-  const [avatar, setAvatar] = useState(null);
+ 
 
   const slideAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const buttonPosition = useRef(new Animated.ValueXY({ x: 20, y: 120 })).current;
 
   const router = useRouter();
-  const { cart } = useContext(CartContext);
-  const { favorites } = useContext(FavoritesContext);
+  const { cart, resetCart } = useContext(CartContext);
+  const { favorites, clearFavorites  } = useContext(FavoritesContext);
+  
+  
 
-  useEffect(() => {
-    const getUser = async () => {
-      const name = await AsyncStorage.getItem('username');
-      const avatarUrl = await AsyncStorage.getItem('avatar');
-      setUsername(name);
-      setAvatar(avatarUrl);
-    };
-    getUser();
-  }, []);
+
+  const username = user?.username;
+  const avatar = user?.avatar;
+
+ 
 
   const toggleMenu = () => {
     if (menuOpen) {
@@ -72,8 +71,9 @@ export default function Menu() {
       'username',
       'avatar'
     ]);
-    setUsername(null);
-    setAvatar(null);
+    logout(); // limpia el contexto global
+    clearFavorites();       // limpia FavoritesContext
+    resetCart();  // limpia CartContext
     setMenuOpen(false);
     router.replace('/');
   };
@@ -99,6 +99,7 @@ export default function Menu() {
       }
     })
   ).current;
+  console.log('user Active:', username);
 
   return (
     <>
@@ -183,6 +184,15 @@ export default function Menu() {
               <TouchableOpacity style={styles.item}>
                 <IconCategories />
                 <Text style={styles.label}>Categorías</Text>
+              </TouchableOpacity>
+            </Link>
+
+            <Link href={username ? '/invoice' : '/login'} asChild>
+              <TouchableOpacity style={styles.item}>
+                <IconShoppingCart />
+                <Text style={styles.label}>
+                  Facturas 
+                </Text>
               </TouchableOpacity>
             </Link>
 
