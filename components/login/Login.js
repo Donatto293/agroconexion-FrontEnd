@@ -95,7 +95,7 @@ export default function Login() {
       ]);
 
       // Redirigir al inicio
-      router.replace('/');
+      router.replace('/inicio');
  
          } catch (error) {
             // Manejo de errores de la petición

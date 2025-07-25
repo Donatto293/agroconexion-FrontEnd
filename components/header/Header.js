@@ -11,7 +11,7 @@ import logo from '../../assets/logo.png';
 import Menu from '../menu/Menu';
 import { SearchContext } from '../../context/SearchContext';
 
-export default function Header() {
+export default function HeaderScreen() {
   const [searchActive, setSearchActive] = useState(false);
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
 

@@ -83,7 +83,7 @@ export default function CategoriesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.push("/inicio")} style={styles.backButton}>
           <IconArrowLeft color="#00732E" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nuestras Categorías</Text>

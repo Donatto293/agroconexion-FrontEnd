@@ -195,6 +195,12 @@ export default function Menu() {
                 </Text>
               </TouchableOpacity>
             </Link>
+            <Link href="/" asChild>
+              <TouchableOpacity style={styles.item}>
+                <IconCoupons />
+                <Text style={styles.label}>prueba</Text>
+              </TouchableOpacity>
+            </Link>
 
             {username && (
               <TouchableOpacity onPress={handleLogout} style={styles.logout}>

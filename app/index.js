@@ -1,61 +1,154 @@
-import { useState, useEffect } from "react";
-import { View, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Pressable
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../context/authContext';
 
-import Header from "../components/header/Header";
-import ProductSmall from "../components/productSmall";
-import Products from "../components/products";
-import useProducts from "../api/products";
-import Welcome from "../components/welcome/welcome";
-import CategoryCarousel from "../components/carruseles/CategoryCarousel";
-import { categoriesService } from "../api/categorias";
+const isLoggedIn = false; // Reemplaza con tu lógica real de sesión
 
-export default function Index() {
-  const [showWelcome, setShowWelcome] = useState(true); // pantalla de bienvenida activa al inicio
-  const { products, loading, error } = useProducts();
-  const [categories, setCategories] = useState([]);
+export default function index() {
+  const {user} = useAuth();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const router = useRouter();
 
-  const handleContinue = () => {
-    setShowWelcome(false); // desactiva welcome
+  const handleFingerprintPress = () => {
+    if (user?.token) {
+      // 👉 está logueado, redirigir directamente
+      router.replace('/inicio');
+    } else {
+      // 👉 no logueado, mostrar el modal
+      setMenuVisible(true);
+    }
   };
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await categoriesService.getAll();
-        setCategories(data);
-      } catch (err) {
-        console.error("Error cargando categorías:", err.message);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  if (showWelcome) {
-    return <Welcome onContinue={handleContinue} />;
-  }
+ 
+  const closeMenu = () => setMenuVisible(false);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100" edges={["top", "bottom"]}>
-      <View className="position-absolute w-full h-50 bg-[#00732E]">
-        <Header />
-      </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>AgroConexión</Text>
+      <Text style={styles.subtitle}>🌿 Conectando el campo contigo</Text>
 
-<ScrollView contentContainerStyle={{ paddingTop: 25 }}>
-  {/*  Carrusel de categorías con espacio */}
-  <View style={{ marginBottom: 45 }}>
-    <CategoryCarousel categories={categories} />
-  </View>
+      {/* Botón redondo tipo huella */}
+      <TouchableOpacity
+        style={styles.fingerprintButton}
+        onLongPress={handleFingerprintPress}
+        activeOpacity={0.7}
+      >
+        <MaterialCommunityIcons name="fingerprint" size={40} color="#ffffff" />
+      </TouchableOpacity>
 
-  {/*  Productos pequeños destacados */}
-  <View style={{ marginBottom: 24 }}>
-    <ProductSmall products={products} loading={loading} error={error} />
-  </View>
+      {/* Modal desplegable desde abajo */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={menuVisible}
+        onRequestClose={closeMenu}
+      >
+        <Pressable style={styles.backdrop} onPress={closeMenu}>
+          <View style={styles.bottomCard}>
+            <Text style={styles.cardTitle}>¿Cómo quieres continuar?</Text>
+            {!isLoggedIn && (
+              <>
+                <TouchableOpacity
+                  style={styles.cardOption}
+                  onPress={() => {
+                    closeMenu();
+                    router.push('/login');
+                  }}
+                >
+                  <Text style={styles.optionText}> Iniciar sesión</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cardOption}
+                  onPress={() => {
+                    closeMenu();
+                    router.replace('/inicio');
+                  }}
+                >
+                  <Text style={styles.optionText}> Explorar sin cuenta</Text>
+                </TouchableOpacity>
+              </>
+            )}
 
-  {/*  Todos los productos */}
-  <Products products={products} loading={loading} error={error} />
-</ScrollView>
-
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+// Estilos
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#00732E',
+    marginBottom: 6
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#374151',
+    marginBottom: 40,
+    textAlign: 'center'
+  },
+  fingerprintButton: {
+    backgroundColor: '#00732E',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6
+  },
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)'
+  },
+  bottomCard: {
+    backgroundColor: '#ffffff',
+    padding: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    elevation: 4
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#00732E',
+    marginBottom: 20
+  },
+  cardOption: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 12
+  },
+  optionText: {
+    fontSize: 16,
+    color: '#1e293b',
+    textAlign: 'center'
+  }
+});

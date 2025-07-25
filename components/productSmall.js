@@ -1,5 +1,5 @@
 import useProducts from '../api/products';
-import { View, ActivityIndicator, Image, Dimensions, Pressable, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, Image, Dimensions, Pressable, StyleSheet, Text as RNText } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { useRouter } from 'expo-router';
 import { TouchableRipple, Dialog, Portal, Modal, Text, Button, Provider } from 'react-native-paper';
@@ -12,7 +12,7 @@ import { IconPlus, IconFav, IconFavnot } from './icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../utils/axiosInstance';
 
-const API_URL = api.defaults.baseURL; // 🔁 Cambia por tu IP local o dominio backend
+const API_URL = api.defaults.baseURL; //  Cambia por tu IP local o dominio backend
 
 export default function ProductSmall({ products, loading, error }) {
   const router = useRouter();
@@ -24,10 +24,15 @@ export default function ProductSmall({ products, loading, error }) {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   
+  
+  const hideModal = () => setShowModal(false);
+
   const showLoginAlert = (message) => {
     setModalMessage(message);
     setShowModal(true);
   };
+
+
 
   //animacion de boton plus de agregar al carrito
   const scale= useSharedValue(1);
@@ -37,7 +42,8 @@ export default function ProductSmall({ products, loading, error }) {
   };
 })
 
-const hideModal = () => setShowModal(false);
+
+
 
 
   
@@ -150,19 +156,55 @@ const hideModal = () => setShowModal(false);
               )}
               <Text style={{ color: '#00732E', fontSize: 16, fontWeight: 'bold' }}>${product.price}</Text>
             </Pressable>
-             <Portal>
-              <Dialog visible={showModal} onDismiss={hideModal} >
-                <Dialog.Title>Atención</Dialog.Title>
+          
+            <Portal>
+              <Dialog 
+              visible={showModal}
+              onDismiss={hideModal}
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                margin: 0,
+                backgroundColor: '#ffffff',
+                borderRadius: 24,
+                paddingHorizontal: 10,
+                paddingVertical: 10,
+                marginHorizontal: 20,
+                elevation: 5,
+              }}
+
+              >
+                <Dialog.Title>
+                   <Text className="text-lg font-bold text-green-800"> Atención</Text>
+                  </Dialog.Title>
                 <Dialog.Content>
-                  <Text>{modalMessage}</Text>
+                  <Text className="text-base text-gray-800">{modalMessage}</Text>
                 </Dialog.Content>
                 <Dialog.Actions>
-                  <Button onPress={hideModal}>Cerrar</Button>
+                  <Button 
+                  onPress={hideModal}
+                  labelStyle={{ color: '#1f2937', fontWeight: 'bold' }} // text-gray-800
+                  style={{
+                    backgroundColor: '#a7f3d0', // bg-green-200
+                    borderRadius: 12,
+                    paddingHorizontal: 10,
+                    marginBottom: 10,
+                  }}
+
+                  >
+                    Cerrar</Button>
                 </Dialog.Actions>
               </Dialog>
             </Portal>
+
+
   
           </View>
+          
+
+          
           
         );
       }}
@@ -171,3 +213,25 @@ const hideModal = () => setShowModal(false);
 
   );
 }
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  bottomDialog: {
+    backgroundColor: 'white',
+    padding: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  dialogTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  dialogContent: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+});

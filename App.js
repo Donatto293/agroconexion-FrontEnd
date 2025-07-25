@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Alert } from 'react-native';
 import "./global.css"
-import Header from './components/header/header';
+import HeaderScreen from './components/header/header';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 
@@ -12,7 +12,7 @@ export default function App() {
   return (
     <SafeAreaProvider >
       
-      <Header />
+      <HeaderScreen />
     {/* Resto del contenido de la app */}
     <View className="flex-1 items-center justify-center">
       {/* Aquí va el contenido principal */}
