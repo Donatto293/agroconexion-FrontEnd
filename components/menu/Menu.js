@@ -7,7 +7,9 @@ import {
   Image,
   Dimensions,
   StyleSheet,
-  PanResponder
+  PanResponder,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -24,6 +26,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
 import { useAuth } from '../../context/authContext';
+import { Portal } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -101,8 +105,11 @@ export default function Menu() {
   ).current;
   console.log('user Active:', username);
 
-  return (
-    <>
+ return (
+ 
+  <>
+ 
+    <Portal>
       {/* Botón flotante arrastrable */}
       <Animated.View
         {...panResponder.panHandlers}
@@ -123,101 +130,122 @@ export default function Menu() {
 
       {/* Menú lateral completo */}
       {menuOpen && (
-        <Animated.View style={[styles.panel, { transform: [{ translateX: slideAnim }] }]}>
-          <View style={styles.header}>
-            <Text style={styles.headerText}>Menú Principal</Text>
-          </View>
+        <>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            Keyboard.dismiss();
+            if (menuOpen) toggleMenu();
+          }}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              marginTop: "4%",
+              backgroundColor: 'rgba(0,0,0,0.3)', // Fondo oscurecido 
+              zIndex: 9999, // Asegurar que esta por encima de todo 
+            }}
+          >
+            <Animated.View style={[styles.panel, { transform: [{ translateX: slideAnim }] }]}>
+              <View style={styles.header}>
+                <Text style={styles.headerText}>Menú Principal</Text>
+              </View>
 
-          <View style={styles.panelContent}>
-            <Link href={username ? '/' : '/login'} asChild>
-              <TouchableOpacity style={styles.profileBox}>
-                {username && avatar ? (
-                  <Image source={{ uri: avatar }} style={styles.avatar} />
-                ) : (
-                  <IconUser />
+              <View style={styles.panelContent}>
+                <Link href={username ? '/' : '/login'} asChild>
+                  <TouchableOpacity style={styles.profileBox} onPress={toggleMenu}>
+                    {username && avatar ? (
+                      <Image source={{ uri: avatar }} style={styles.avatar} />
+                    ) : (
+                      <IconUser />
+                    )}
+                    <Text style={styles.profileText}>
+                      {username ? `${username}` : 'Inicia sesión'}
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+
+                {/* Opciones del menú */}
+                <Link href="/inicio" asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconHome size={22} color="#00732E" />
+                    <Text style={styles.label}>Inicio</Text>
+                  </TouchableOpacity>
+                </Link>
+
+                <Link href={username ? '/cart' : '/login'} asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconShoppingCart />
+                    <Text style={styles.label}>
+                      Carrito {cart.length > 0 && `(${cart.length})`}
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+
+                <Link href={username ? '/favorites' : '/login'} asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconFavorites />
+                    <Text style={styles.label}>
+                      Favoritos {favorites.length > 0 && `(${favorites.length})`}
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+
+                <Link href="/cupones" asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconCoupons />
+                    <Text style={styles.label}>Cupones</Text>
+                  </TouchableOpacity>
+                </Link>
+
+                <Link href="/ofertas" asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconDiscount />
+                    <Text style={styles.label}>Ofertas</Text>
+                  </TouchableOpacity>
+                </Link>
+
+                <Link href="/categorias" asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconCategories />
+                    <Text style={styles.label}>Categorías</Text>
+                  </TouchableOpacity>
+                </Link>
+
+                <Link href={username ? '/invoice' : '/login'} asChild>
+                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
+                    <IconShoppingCart />
+                    <Text style={styles.label}>Facturas</Text>
+                  </TouchableOpacity>
+                </Link>
+
+                {username && (
+                  <TouchableOpacity onPress={handleLogout} style={styles.logout}>
+                    <Ionicons name="log-out-outline" size={20} color="#dc2626" />
+                    <Text style={styles.logoutText}>Cerrar sesión</Text>
+                  </TouchableOpacity>
                 )}
-                <Text style={styles.profileText}>
-                  {username ? `${username}` : 'Inicia sesión'}
-                </Text>
-              </TouchableOpacity>
-            </Link>
-
-            {/* Opciones del menú */}
-            <Link href="/inicio" asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconHome size={22} color="#00732E" />
-                <Text style={styles.label}>Inicio</Text>
-              </TouchableOpacity>
-            </Link>
-
-            <Link href={username ? '/cart' : '/login'} asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconShoppingCart />
-                <Text style={styles.label}>
-                  Carrito {cart.length > 0 && `(${cart.length})`}
-                </Text>
-              </TouchableOpacity>
-            </Link>
-
-            <Link href={username ? '/favorites' : '/login'} asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconFavorites />
-                <Text style={styles.label}>
-                  Favoritos {favorites.length > 0 && `(${favorites.length})`}
-                </Text>
-              </TouchableOpacity>
-            </Link>
-
-            <Link href="/cupones" asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconCoupons />
-                <Text style={styles.label}>Cupones</Text>
-              </TouchableOpacity>
-            </Link>
-
-            <TouchableOpacity style={styles.item}>
-              <IconDiscount />
-              <Text style={styles.label}>Ofertas</Text>
-            </TouchableOpacity>
-
-            <Link href="/categorias" asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconCategories />
-                <Text style={styles.label}>Categorías</Text>
-              </TouchableOpacity>
-            </Link>
-
-            <Link href={username ? '/invoice' : '/login'} asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconShoppingCart />
-                <Text style={styles.label}>
-                  Facturas 
-                </Text>
-              </TouchableOpacity>
-            </Link>
-            <Link href="/" asChild>
-              <TouchableOpacity style={styles.item}>
-                <IconCoupons />
-                <Text style={styles.label}>prueba</Text>
-              </TouchableOpacity>
-            </Link>
-
-            {username && (
-              <TouchableOpacity onPress={handleLogout} style={styles.logout}>
-                <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-                <Text style={styles.logoutText}>Cerrar sesión</Text>
-              </TouchableOpacity>
-            )}
+              </View>
+            </Animated.View>
           </View>
-        </Animated.View>
+        </TouchableWithoutFeedback>
+        </>
       )}
-    </>
-  );
+    </Portal>
+    
+  </>
+  
+);
 }
 
 const styles = StyleSheet.create({
   draggableButton: {
     position: 'absolute',
+    bottom: 20,
+    right: 20,
     zIndex: 100,
     backgroundColor: '#ffffff',
     borderRadius: 40,
@@ -246,7 +274,8 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#00732E'
+    color: '#00732E',
+  
   },
   panelContent: {
     paddingHorizontal: 20,

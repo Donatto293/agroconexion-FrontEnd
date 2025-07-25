@@ -36,7 +36,7 @@ export default function ProductDetail() {
   };
 
   const closeMenu = () => setMenuVisible(false);
-
+//------------------handle favorite
   const handleToggleFavorite = async () => {
     if (!user) {
       showMenu("Debes iniciar sesión para agregar a favoritos");

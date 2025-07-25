@@ -1,4 +1,12 @@
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { 
+    View, 
+    Text, 
+    FlatList, 
+    TouchableOpacity, 
+    SafeAreaView, 
+    Alert,
+    Image
+} from 'react-native';
 import {  memo, useContext, useCallback } from 'react';
 import { Link } from 'expo-router';
 import { CartContext } from '../context/cartContext';
@@ -6,22 +14,26 @@ import { IconArrowLeft } from '../components/icons';
 import { useRouter } from 'expo-router';
 import { IconTrash } from '../components/icons';
 import { createInvoiceFromCart } from '../api/invoices';
+import useProducts from '../api/products';
+import api from '../utils/axiosInstance';
  
 
 const CartScreen = memo(() => {
-  const { cart, removeFromCart, clearCart, total, resetCart } = useContext(CartContext)
-  const router = useRouter();
+    const { cart, removeFromCart, clearCart, total, resetCart } = useContext(CartContext)
+    const router = useRouter();
+    const { products, loading, error } = useProducts();
+    const API_URL = api.defaults.baseURL;
 
-  const handleRemove = useCallback(() => {
-    Alert.alert(
-      "¿Vaciar carrito?",
-      "Esta acción no se puede deshacer.",
-      [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", onPress: () => clearCart() }
-    ]
-  );
-}, []);
+    const handleRemove = useCallback(() => {
+        Alert.alert(
+        "¿Vaciar carrito?",
+        "Esta acción no se puede deshacer.",
+        [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Eliminar", onPress: () => clearCart() }
+        ]
+    );
+    }, []);
 
     const handleCheckout = useCallback(async() => {
     if (cart.length === 0) {
@@ -53,64 +65,82 @@ const CartScreen = memo(() => {
             }
         }, [cart, clearCart, router]);
 
-  return (
-    <SafeAreaView className="flex-1 p-4 bg-white">
-        <View className="flex-1 p-4 bg-white">
-        <Text className="text-2xl font-bold mb-4">Carrito de Compras</Text>
-        <View className=''>
-            <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
-                            <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
-                                <IconArrowLeft color="#00732E"  />
-                            </TouchableOpacity>
-            </View>
+  
+ return (
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-1 p-4">
+        <View className="flex-row items-center mb-4">
+          <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full">
+            <IconArrowLeft color="#00732E" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold ml-4">Carrito de Compras</Text>
         </View>
 
         {cart.length === 0 ? (
-            <Text>El carrito está vacío.</Text>
+          <Text className="text-gray-500">El carrito está vacío.</Text>
         ) : (
-            <>
+          <>
             <FlatList
-                data={cart}
-                keyExtractor={item => item?.id?.toString()}
-                renderItem={({ item }) => (
-                  
-                    <View className="mb-4 p-3 bg-gray-100 rounded">
-                          
-                    <Link key={`/${item.product.id}`}
+              data={cart}
+              keyExtractor={(item) => item?.id?.toString()}
+              renderItem={({ item }) => {
+                const imageUrl = item.product?.images?.[0]?.image
+                  ? `${API_URL}${item.product.images[0].image}`
+                  : null;
+
+                return (
+                  <View className="mb-4 p-3 bg-gray-100 rounded flex-row items-center">
+                    
+                    <View className="flex-1">
+                      <Link
+                        key={`/${item.product.id}`}
                         href={`/${item.product.id}`}
-                        className="flex-1" asChild>
-                    <Text className="text-lg">{item.product.name}</Text>
-                    </Link>
-                    {console.log(item)}
-                    <Text className="text-green-600">
-                        ${item.product.price}  x {item.quantity}
-                    </Text>
-                    <TouchableOpacity
+                        asChild
+                      >
+                        <Text className="text-lg font-semibold">
+                          {item.product.name}
+                        </Text>
+                      </Link>
+
+                      <Text className="text-green-600 mt-1">
+                        ${item.product.price} x {item.quantity}
+                      </Text>
+
+                      <TouchableOpacity
                         onPress={() => removeFromCart(item.product.id)}
                         className="mt-2"
-                    >
+                      >
                         <IconTrash />
-                    </TouchableOpacity>
+                      </TouchableOpacity>
                     </View>
-                )}
+                    {imageUrl && (
+                      <Image
+                        source={{ uri: imageUrl }}
+                        className="w-20 h-20 rounded mr-3 bg-gray-200"
+                      />
+                    )}
+
+                  </View>
+                );
+              }}
             />
 
             <View className="mt-4 p-4 bg-white rounded shadow">
-                <Text className="text-xl font-bold text-right">
+              <Text className="text-xl font-bold text-right">
                 Total: ${total.toFixed(2)}
-                </Text>
+              </Text>
             </View>
 
             <TouchableOpacity onPress={handleRemove} className="mt-6 p-3 bg-red-200 rounded">
-                <Text className="text-center text-red-700 font-bold">Vaciar carrito</Text>
+              <Text className="text-center text-red-700 font-bold">Vaciar carrito</Text>
             </TouchableOpacity>
 
-             <TouchableOpacity onPress={handleCheckout} className="mt-6 p-3 bg-yellow-200 rounded">
-                <Text className="text-center text-yellow-700 font-bold">Proceder al pago</Text>
+            <TouchableOpacity onPress={handleCheckout} className="mt-4 p-3 bg-yellow-200 rounded">
+              <Text className="text-center text-yellow-700 font-bold">Proceder al pago</Text>
             </TouchableOpacity>
-            </>
+          </>
         )}
-        </View>
+      </View>
     </SafeAreaView>
   );
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+import { Tooltip } from 'react-native-paper';
 
 const CATEGORY_COLORS = [
   '#E8F5E9'
@@ -55,9 +56,16 @@ export default function CategoryCarousel({ categories }) {
                 styles.iconBox,
                 { backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }
               ]}>
-                <Icon name={iconData.icon} size={40} color="#00732E" />
+                <Icon name={iconData.icon} size={20} color="#00732E" />
               </View>
-              <Text style={styles.label} numberOfLines={1}>{item.name}</Text>
+                <Tooltip 
+                title={item.name}
+                
+                theme={{ colors: { primary: 'green', surface: '#cefcc4ff' } }}              
+                              
+                >
+                  <Text style={styles.label} numberOfLines={1}>{item.name}</Text>
+                </Tooltip>
             </TouchableOpacity>
           </Link>
         );
@@ -74,11 +82,11 @@ const styles = StyleSheet.create({
     card: {
     alignItems: 'center',
     marginRight: 32,
-    width: 80,
+    width: 70,
     },
   iconBox: {
-    width: 100,
-    height:100,
+    width: 50,
+    height:50,
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',

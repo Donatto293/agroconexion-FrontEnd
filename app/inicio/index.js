@@ -105,12 +105,12 @@ useEffect(() => {
           <>
 
   {/*  Carrusel de categorías con espacio */}
-  <View style={{ marginBottom: 45 }}>
+  <View style={{ marginBottom: "2%", }}>
     <CategoryCarousel categories={categories} />
   </View>
 
   {/*  Productos pequeños destacados */}
-  <View style={{ marginBottom: 24 }}>
+  <View style={{ marginBottom: 0 }}>
     <ProductSmall products={products} loading={loading} error={error} />
   </View>
          </>

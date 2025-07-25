@@ -20,7 +20,7 @@ export async function addToCartAPI(productId, quantity, token) {
 
 export async function removeFromCartAPI(productId, token) {
 
-  const response = await api.delete(`/users/cart/cart/${productId}/`, {
+  const response = await api.delete(`api/users/cart/cart/${productId}/`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data ?? {};
