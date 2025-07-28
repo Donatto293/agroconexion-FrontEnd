@@ -155,7 +155,7 @@ export default function Menu() {
               </View>
 
               <View style={styles.panelContent}>
-                <Link href={username ? '/' : '/login'} asChild>
+                <Link href={username ? '/perfil' : '/login'} asChild>
                   <TouchableOpacity style={styles.profileBox} onPress={toggleMenu}>
                     {username && avatar ? (
                       <Image source={{ uri: avatar }} style={styles.avatar} />

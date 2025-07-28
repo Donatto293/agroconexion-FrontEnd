@@ -1,33 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router'; // Añadido useRouter
-import { productsService } from '../../api/categorias';
+import {
+  View, Text, FlatList, ActivityIndicator, RefreshControl, StyleSheet,
+  TouchableOpacity, Image
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { productsService, categoriesService } from '../../api/categorias';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../../utils/axiosInstance';
 
-const PRODUCT_COLORS = ['#E6F9E6'];
+const API_URL = api.defaults.baseURL;
 
 export default function CategoryProductsScreen() {
   const { id } = useLocalSearchParams();
-  const router = useRouter(); // Inicializado el router
+  const router = useRouter();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadProductsAndCategory = async () => {
       try {
-        const data = await productsService.getByCategory(id);
-        setProducts(data);
+        const [productsData, categoriesData] = await Promise.all([
+          productsService.getByCategory(id),
+          categoriesService.getAll()
+        ]);
+
+
+
+        const filtered = productsData.filter(p =>
+          Array.isArray(p.category) && p.category.includes(Number(id))
+        );
+        setProducts(filtered);
+
+        const foundCategory = categoriesData.find(c => String(c.id) === String(id));
+        setCategoryName(foundCategory?.name || 'Categoría');
       } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    loadProducts();
+
+    loadProductsAndCategory();
   }, [id]);
 
   if (loading) {
@@ -53,7 +71,7 @@ export default function CategoryProductsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#00732E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>hola </Text>
+        <Text style={styles.headerTitle}>{categoryName}</Text>
         <View style={styles.headerRightPlaceholder} />
       </View>
 
@@ -76,39 +94,66 @@ export default function CategoryProductsScreen() {
           </View>
         }
         contentContainerStyle={styles.listContent}
-        renderItem={({ item, index }) => (
-          <View style={styles.cardWrapper}>
-            <LinearGradient
-              colors={[PRODUCT_COLORS[index % PRODUCT_COLORS.length], '#ffffff']}
-              style={styles.productCard}
-            >
-              <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.productPrice}>${item.price}</Text>
-              {item.description && (
-                <Text style={styles.productDescription} numberOfLines={2}>{item.description}</Text>
-              )}
-            </LinearGradient>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const isOutOfStock = (item.stock || 0) === 0;
+          const hasImages = Array.isArray(item.images) && item.images.length > 0;
+          const imageUrl = hasImages ? `${API_URL}${item.images[0].image}` : null;
+
+          return (
+            <View style={styles.card}>
+              <View style={{ position: 'relative' }}>
+                {imageUrl ? (
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.productImage, {
+                    backgroundColor: '#f1f5f9',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }]}>
+                    <Text style={{ color: '#6b7280' }}>Sin imagen</Text>
+                  </View>
+                )}
+                {isOutOfStock && (
+                  <View style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    backgroundColor: '#dc2626',
+                    paddingVertical: 2,
+                    paddingHorizontal: 6,
+                    borderRadius: 6
+                  }}>
+                    <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Sin stock</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.infoContainer}>
+                <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.price}>${item.price}</Text>
+                {item.description && (
+                  <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+                )}
+              </View>
+            </View>
+          );
+        }}
       />
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f6fcf8',
     paddingHorizontal: 12
   },
-  header: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1e293b',
-    textAlign: 'center',
-    marginVertical: 16
-  },
   headerContainer: {
+   
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -120,14 +165,14 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8
   },
-  headerRightPlaceholder: {
-    width: 40
-  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1e293b',
     textAlign: 'center'
+  },
+  headerRightPlaceholder: {
+    width: 40
   },
   centerContainer: {
     flex: 1,
@@ -145,45 +190,50 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   columnWrapper: {
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 8
+    paddingBottom: 12
   },
   listContent: {
     paddingBottom: 32
   },
-  cardWrapper: {
-    height: 100,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     width: '48%',
     marginBottom: 18
   },
-  productCard: {
-    borderRadius: 14,
-    height: '100%',
+  productImage: {
     width: '100%',
-    paddingVertical: '2%',
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 4
+    height: 100,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16
   },
-  productName: {
-    fontSize: 16,
+  infoContainer: {
+    padding: 10,
+    alignItems: 'center'
+  },
+  name: {
     fontWeight: '600',
+    fontSize: 16,
     color: '#1e293b',
-    textAlign: 'center',
-    marginBottom: 4
+    marginBottom: 4,
+    textAlign: 'center'
   },
-  productPrice: {
-    fontSize: 14,
+  price: {
     color: '#00C49A',
     fontWeight: '500',
+    fontSize: 14,
     marginBottom: 4
   },
-  productDescription: {
+  description: {
     fontSize: 12,
     color: '#64748b',
-    textAlign: 'center',
+    textAlign: 'center'
   },
   emptyContainer: {
     flex: 1,
