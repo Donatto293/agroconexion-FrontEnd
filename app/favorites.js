@@ -83,9 +83,7 @@ const FavoritesScreen = memo(() => {
                       <Text className="text-2xl font-extrabold text-emerald-600 mb-1">
                         ${item.product.price}
                       </Text>
-                      <Text className="text-xs text-gray-500">
-                        En stock • Envío gratis
-                      </Text>
+
                     </View>
                   </TouchableOpacity>
                 </Link>
