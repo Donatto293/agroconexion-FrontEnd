@@ -21,14 +21,14 @@ import {
   IconDiscount,
   IconUser
 } from '../icons';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, usePathname } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
 import { useAuth } from '../../context/authContext';
 import { Portal } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { MenuContext, useMenu } from '../../context/menuContext';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function Menu() {
@@ -42,10 +42,10 @@ export default function Menu() {
   const router = useRouter();
   const { cart, resetCart } = useContext(CartContext);
   const { favorites, clearFavorites  } = useContext(FavoritesContext);
-  
-  
+  //contexto del menú
+  const { menuMounted, setMenuMounted } = useContext(MenuContext);
 
-
+  
   const username = user?.username;
   const avatar = user?.avatar;
 
@@ -53,6 +53,7 @@ export default function Menu() {
 
   const toggleMenu = () => {
     if (menuOpen) {
+      setMenuMounted(false);
       Animated.timing(slideAnim, {
         toValue: -SCREEN_WIDTH,
         duration: 300,
@@ -60,6 +61,7 @@ export default function Menu() {
       }).start(() => setMenuOpen(false));
     } else {
       setMenuOpen(true);
+      setMenuMounted(true);
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
@@ -104,6 +106,11 @@ export default function Menu() {
     })
   ).current;
   console.log('user Active:', username);
+  //rutas donde no se muestra el menú
+  const {shouldHideMenu} = useMenu();
+  if (shouldHideMenu) return null; // No renderizar el menú si estamos en una ruta que no lo requiere
+
+
 
  return (
  

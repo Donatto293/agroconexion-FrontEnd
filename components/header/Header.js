@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,22 @@ import {
 } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import logo from '../../assets/logo.png';
-import Menu from '../menu/Menu';
+
 import { SearchContext } from '../../context/SearchContext';
+
 
 export default function HeaderScreen() {
   const [searchActive, setSearchActive] = useState(false);
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
+  const [isActive, setIsActive] = useState(false);
 
+  
+
+  
   return (
     <View className="h-16 flex-row justify-between items-center px-5 bg-[#00732E]">
-      <Menu />
+
+      
 
       {searchActive ? (
         <TextInput

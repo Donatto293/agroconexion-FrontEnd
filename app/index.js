@@ -5,12 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Pressable
+  Pressable,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/authContext';
+import useBackButtonHandler from '../hooks/useBackButtonHandler';
+
 
 const isLoggedIn = false; // Reemplaza con tu lógica real de sesión
 
@@ -18,6 +21,23 @@ export default function index() {
   const {user} = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
+
+  //boton de regresar de android 
+  useBackButtonHandler(() => {
+     if (router.canGoBack()) {
+      return false // Permite comportamiento normal (navegar atrás)
+    }
+    Alert.alert(
+      '¿Salir?',
+      '¿Deseas salir de la aplicación?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Salir', onPress: () => BackHandler.exitApp() },
+      ]
+    )
+    return true
+  })
+
 
   const handleFingerprintPress = () => {
     if (user?.token) {

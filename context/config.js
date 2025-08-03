@@ -1,4 +1,4 @@
-// config.js
+
 import api from "../utils/axiosInstance";
 
 export const API_URL = api.defaults.baseURL; // Reemplaza con tu URL real

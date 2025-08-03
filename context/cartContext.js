@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCartAPI, addToCartAPI, removeFromCartAPI } from "../api/cart";
 
@@ -123,23 +123,40 @@ export const CartProvider = ({ children }) => {
 
   const resetCart = () => setCart([]);
 
+  // 3) Memoizar el value
+  const contextValue = useMemo(() => ({
+    cart,
+    subtotal,
+    discount,
+    shippingDiscount,
+    shippingCost: SHIPPING_COST,
+    total,
+    appliedCoupon,
+    loadCart,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    applyCoupon,
+    removeCoupon,
+    resetCart: () => setCart([])
+  }), [
+    cart,
+    subtotal,
+    discount,
+    shippingDiscount,
+    total,
+    appliedCoupon,
+    loadCart,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    applyCoupon,
+    removeCoupon
+  ]);
+
+  // 4) Renderizar provider
   return (
-    <CartContext.Provider value={{ 
-      cart,
-      subtotal,
-      discount,
-      shippingDiscount,
-      shippingCost: SHIPPING_COST,
-      total,
-      appliedCoupon,
-      addToCart,
-      removeFromCart,
-      clearCart,
-      loadCart,
-      applyCoupon,
-      removeCoupon,
-      resetCart
-    }}>
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );

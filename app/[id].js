@@ -96,7 +96,9 @@ export default function ProductDetail() {
               Este producto estará disponible pronto
             </Text>
           )}
-
+          
+            <Text style={styles.measure}>{productData.unit_of_measure}</Text>
+          
           <Text style={styles.price}>${productData.price}</Text>
 
           {/* Selector de cantidad */}
@@ -253,5 +255,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1e293b",
     textAlign: "center",
+  },
+  measure: {
+    fontSize: 14,
+    color: "#1a836eff",
+   
   },
 });

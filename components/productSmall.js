@@ -8,6 +8,8 @@ import { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../context/cartContext';
 import { FavoritesContext } from '../context/favoritesContext';
 
+
+
 import { IconPlus, IconFav, IconFavnot } from './icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../utils/axiosInstance';
@@ -65,31 +67,41 @@ export default function ProductSmall({ products, loading, error }) {
 
   if (loading) return <ActivityIndicator size="large" color="#00732E" />;
   if (error) return <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>;
-  
-        const handleToggleFavorite = async () => {
-          if (!user) {
-            showLoginAlert('Debes iniciar sesión para agregar a favoritos');
-            return;
-          }
-          if (isFavorite) {
-            await removeFavorite(product.id);
-          } else {
-            await addFavorite(product.id);
-          }
 
-          // Actualizar inmediatamente el estado local
-          setFavoritesState(prev => ({
-            ...prev,
-            [product.id]: !isFavorite
-          }));
-        }
+  const handleToggleFavorite = async (product) => {
+    if (!user) {
+      showLoginAlert('Debes iniciar sesión para agregar a favoritos');
+      return;
+    }
+    const isFavorite = favoritesState[product.id] || false;
+    if (isFavorite) {
+      await removeFavorite(product.id);
+    } else {
+      await addFavorite(product.id);
+    }
+
+    // Actualizar inmediatamente el estado local
+    setFavoritesState(prev => ({
+      ...prev,
+      [product.id]: !isFavorite
+    }));
+  }
+
+ 
+  const MAX_SLIDES = 7; // Máximo de productos a mostrar en el carrusel
+  const randomProducts = products.sort(() => 0.5 - Math.random()).slice(0, MAX_SLIDES); // Selecciona los primeros MAX_SLIDES productos aleatorios
+
   return (
     <Carousel
       width={width}
       height={300}
-      data={products}
+      data={randomProducts} // Muestra productos aleatorios
       autoPlay
       scrollAnimationDuration={3000}
+      windowSize={5}
+      initialNumToRender={5}
+      maxToRenderPerBatch={5}
+      removeClippedSubviews={true}
       renderItem={({ item: product }) => {
         const isFavorite = favoritesState[product.id] === true;
         const imageUrl = product.images?.[0]?.image

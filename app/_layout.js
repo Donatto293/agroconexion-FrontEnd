@@ -1,27 +1,50 @@
 import { View } from "react-native";
-import { Stack } from "expo-router";
-import { CartProvider } from "../context/cartContext";
+import { Stack, usePathname } from "expo-router";
+
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Provider as PaperProvider } from "react-native-paper";
-import { AuthProvider, useAuth } from "../context/authContext";
+import Menu from "../components/menu/Menu";
+
+
 import "../global.css"
-import { FavoritesProvider } from "../context/favoritesContext";
+
 import { useSessionSync } from "../hooks/useSessionSync";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext, use } from "react";
 import { ActivityIndicator } from "react-native-paper";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+//providers
+import { Provider as PaperProvider } from "react-native-paper";
+import { AuthProvider, useAuth } from "../context/authContext";
+import { FavoritesProvider } from "../context/favoritesContext";
 import { SearchProvider } from "../context/SearchContext";
+import { MenuProvider , MenuContext } from "../context/menuContext";
+import { CartProvider } from "../context/cartContext";
 
 
 
 export default function Layout(){
 
+ //montaje del menú
+ //se utiliza para evitar render duplicado
+ // y en funcion para esperar el Provider del menú
+ function MenuInitializer({ children }) {
+  const { menuMounted, setMenuMounted } = useContext(MenuContext);
+
+  useEffect(() => {
+    if (!menuMounted) setMenuMounted(true);
+  }, [menuMounted, setMenuMounted]);
+
+  return <>{children}</>;
+}
+  
 
   function SessionSyncWrapper({ children }) {
   const { login } = useAuth();
   const [loading, setLoading] = useState(true);
   
   useSessionSync(); // Sincronización con contextos
+
 
   // Cargar sesión al iniciar
   useEffect(() => {
@@ -58,27 +81,34 @@ export default function Layout(){
     );
   }
 
-  return <>{children}</>;
-}
-  return(
+    return <>{children}</>;
+  }
+
+  return (
     <SafeAreaProvider>
-    <PaperProvider>
-      <AuthProvider>
-        <SearchProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <SessionSyncWrapper>
-                <View className="flex-1">
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                    }}
-                  />
-                </View>
-              </SessionSyncWrapper>
-            </FavoritesProvider>
-          </CartProvider>
-        </SearchProvider>
+      <PaperProvider>
+
+        <AuthProvider>
+          <MenuProvider>
+            <SearchProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                <SessionSyncWrapper>
+                  <View className="flex-1">
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                      }}
+
+                    />
+                      <Menu />
+
+                  </View>
+                </SessionSyncWrapper>
+              </FavoritesProvider>
+            </CartProvider>
+          </SearchProvider>
+        </MenuProvider>
       </AuthProvider>
     </PaperProvider>
   </SafeAreaProvider>

@@ -1,12 +1,11 @@
-import React from 'react';
+import React, {memo} from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Tooltip } from 'react-native-paper';
 
-const CATEGORY_COLORS = [
-  '#E8F5E9'
-];
+
+const CATEGORY_COLORS = ['#E8F5E9'];
 
 const CATEGORY_ICONS = {
   frutas: { icon: 'food-apple', lib: MaterialCommunityIcons },
@@ -28,7 +27,42 @@ const CATEGORY_ICONS = {
   default: { icon: 'shopping', lib: MaterialCommunityIcons }
 };
 
-export default function CategoryCarousel({ categories }) {
+function CategoryCarousel({ categories }) {
+  const renderItem = ({ item, index }) => {
+    const nameKey = item.name.toLowerCase().trim();
+    let iconData = CATEGORY_ICONS.default;
+
+    for (const [key, data] of Object.entries(CATEGORY_ICONS)) {
+      if (nameKey.includes(key)) {
+        iconData = data;
+        break;
+      }
+    }
+
+    const Icon = iconData.lib;
+
+    return (
+      <Link href={`/categorias/${item.id}`} asChild>
+        <TouchableOpacity style={styles.card}>
+          <View
+            style={[
+              styles.iconBox,
+              { backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }
+            ]}
+          >
+            <Icon name={iconData.icon} size={20} color="#00732E" />
+          </View>
+          <Tooltip
+            title={item.name}
+            theme={{ colors: { primary: 'green', surface: '#cefcc4ff' } }}
+          >
+            <Text style={styles.label} numberOfLines={1}>{item.name}</Text>
+          </Tooltip>
+        </TouchableOpacity>
+      </Link>
+    );
+  };
+
   return (
     <FlatList
       horizontal
@@ -36,40 +70,10 @@ export default function CategoryCarousel({ categories }) {
       keyExtractor={(item) => item.id.toString()}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.carouselContainer}
-      renderItem={({ item, index }) => {
-        const nameKey = item.name.toLowerCase().trim();
-        let iconData = CATEGORY_ICONS.default;
-
-        for (const [key, data] of Object.entries(CATEGORY_ICONS)) {
-          if (nameKey.includes(key)) {
-            iconData = data;
-            break;
-          }
-        }
-
-        const Icon = iconData.lib;
-
-        return (
-          <Link href={`/categorias/${item.id}`} asChild>
-            <TouchableOpacity style={styles.card}>
-              <View style={[
-                styles.iconBox,
-                { backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }
-              ]}>
-                <Icon name={iconData.icon} size={20} color="#00732E" />
-              </View>
-                <Tooltip 
-                title={item.name}
-                
-                theme={{ colors: { primary: 'green', surface: '#cefcc4ff' } }}              
-                              
-                >
-                  <Text style={styles.label} numberOfLines={1}>{item.name}</Text>
-                </Tooltip>
-            </TouchableOpacity>
-          </Link>
-        );
-      }}
+      initialNumToRender={5}
+      renderItem={renderItem}
+      maxToRenderPerBatch={5}
+      removeClippedSubviews
     />
   );
 }
@@ -79,14 +83,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-    card: {
+  card: {
     alignItems: 'center',
     marginRight: 32,
     width: 70,
-    },
+  },
   iconBox: {
     width: 50,
-    height:50,
+    height: 50,
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
@@ -99,3 +103,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default React.memo(CategoryCarousel);
+

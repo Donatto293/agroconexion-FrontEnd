@@ -1,6 +1,20 @@
-import { useState, useEffect, useContext } from "react";
-import { View, ScrollView } from "react-native";
+import React,{ 
+  useState, 
+  useEffect, 
+  useContext, 
+  useRef,
+  useMemo,
+  useCallback,
+  use
+} from "react";
+import { 
+  View, 
+  ScrollView, 
+  Alert,
+  Animated
+ } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 
 import HeaderScreen from "../../components/header/Header";
 import ProductSmall from "../../components/productSmall";
@@ -12,18 +26,64 @@ import { categoriesService } from "../../api/categorias";
 import { useAuth } from "../../context/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SearchContext } from "../../context/SearchContext";
+import useBackButtonHandler from "../../hooks/useBackButtonHandler";
+import { BackHandler } from "react-native";
+import throttle from "lodash/throttle";
+
+
+import ScrollToTopButton from "../../components/scrollToTopButton";
 
 export default function Inicio() {
   const [showWelcome, setShowWelcome] = useState(true); // pantalla de bienvenida activa al inicio
   const [checkedWelcome, setCheckedWelcome] = useState(false);
   const { products, loading, error } = useProducts();
-  const [categories, setCategories] = useState([]);
+  
   const {user} = useAuth();
 
   const {searchQuery} = useContext(SearchContext)
+  
+  // control botón scroll-to-top
+  const scrollViewRef = useRef(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  
+  //para el carrusel de categorías
+  const [categories, setCategories] = useState([]);
+  const memoizedCategories = useMemo(() => categories, [categories]);
+  
 
-  
-  
+
+
+  //handler Scroll 
+  const handleScroll = useCallback(throttle((offsetY) => {
+    setShowScrollButton(offsetY > 300);
+}, 300), []);
+
+// Añade limpieza del throttle
+useEffect(() => {
+    return () => {
+        handleScroll.cancel?.();
+    };
+}, [handleScroll]);
+
+   // Animated value para el scroll
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Hook para manejar el botón de retroceso en Android
+  // useBackButtonHandler(() => {
+  //   Alert.alert(
+  //     '¿Salir?',
+  //     '¿Deseas salir de la aplicación?',
+  //     [
+  //       { text: 'Cancelar', style: 'cancel' },
+  //       { text: 'Salir', onPress: () => BackHandler.exitApp() },
+  //     ]
+  //   )
+  //   return true
+  // })
+
+
+  // Cargar categorías al inicio
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -36,7 +96,9 @@ export default function Inicio() {
     fetchCategories();
   }, []);
 
-useEffect(() => {
+
+  // Verificar si se debe mostrar la pantalla de bienvenida
+  useEffect(() => {
     const checkWelcome = async () => {
       try {
         const now = Date.now();
@@ -86,6 +148,7 @@ useEffect(() => {
     return null;
   }
 
+
   // 2) Si toca mostrar bienvenida
   if (showWelcome) {
     return <Welcome onContinue={() => setShowWelcome(false)} />;
@@ -98,15 +161,32 @@ useEffect(() => {
       <View className="position-absolute w-full h-50 bg-[#00732E]">
         <HeaderScreen />
       </View>
+      
 
-<ScrollView contentContainerStyle={{ paddingTop: 25 }}>
+
+  <Animated.ScrollView
+        ref={scrollViewRef}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        {
+            useNativeDriver: false,
+            listener: (event) => {
+                const offsetY = event.nativeEvent.contentOffset.y;
+                handleScroll(offsetY);
+            }
+        }
+    )}
+        contentContainerStyle={{ paddingTop: 25 }}
+      >
+     
  {/* Si NO estamos buscando, renderizo carrusel y ProductSmall */}
         {!searchQuery && (
           <>
 
   {/*  Carrusel de categorías con espacio */}
   <View style={{ marginBottom: "2%", }}>
-    <CategoryCarousel categories={categories} />
+    <CategoryCarousel categories={memoizedCategories} />
   </View>
 
   {/*  Productos pequeños destacados */}
@@ -118,8 +198,12 @@ useEffect(() => {
 
   {/*  Todos los productos */}
   <Products products={products} loading={loading} error={error} />
-</ScrollView>
-
+  </Animated.ScrollView>
+  <ScrollToTopButton 
+              scrollRef={scrollViewRef} 
+              scrollOffset={showScrollButton} 
+          />
+       
     </SafeAreaView>
   );
 }

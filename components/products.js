@@ -60,6 +60,9 @@ export default function Products() {
                                         <Text style={styles.productPrice}>
                                             ${product.price}
                                         </Text>
+                                        <Text style={styles.productMeasure}>
+                                            {product.unit_of_measure}
+                                        </Text>
                                     </View>
                                 </View>
                             </Pressable>
@@ -134,7 +137,15 @@ const styles = StyleSheet.create({
     productPrice: {
         fontSize: 17,
         fontWeight: 'bold',
-        color: '#00732E',
+        color: '#228449ff',
+        marginTop: 'auto',
+        textAlign: 'center'
+        
+    },
+    productMeasure: {
+        fontSize: 17,
+        fontWeight: 'bold',
+        color: '#1a836eff',
         marginTop: 'auto',
         textAlign: 'center'
         

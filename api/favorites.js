@@ -20,8 +20,15 @@ export const addFavoriteAPI = async (productId, token) => {
 };
 
 export const removeFavoriteAPI = async (productId, token) => {
-  const response = await api.delete(`${API_URL}${productId}/`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return response.data;
+  try{
+    const response = await api.delete(`${API_URL}${productId}/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    console.log('Removed from favorites:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error removing from favorites:', error);
+  }
+  
 };

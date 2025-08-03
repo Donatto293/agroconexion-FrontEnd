@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useContext, useCallback, useEffect, useMemo } from 'react';
 import { setLogoutHandler } from '../utils/axiosInstance';
 
 export const AuthContext = createContext();
@@ -55,21 +55,26 @@ export function AuthProvider({ children }) {
     loadSession().finally(() => setIsLoading(false));
   }, [loadSession]);
 
+  
+  // Memorizar los valores del contexto para evitar re-renderizados innecesarios
+  const contextValue = useMemo(() => ({
+    user,
+    login,
+    logout,
+    loadSession
+  }), [user, login, logout, loadSession]);
+
   // Mientras carga, no renderices los children
   if (isLoading) {
     return null; // o splash screen/custom loader
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout,
-      loadSession
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => useContext(AuthContext);

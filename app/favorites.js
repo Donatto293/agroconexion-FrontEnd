@@ -1,16 +1,17 @@
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, SafeAreaView, Image, Platform } from 'react-native';
 import { useContext, useCallback, memo } from 'react';
 import { Link } from 'expo-router';
-
 import { FavoritesContext } from '../context/favoritesContext';
-import { IconArrowLeft } from '../components/icons';
+import { IconHeart } from '../components/icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/authContext';
+import api from '../utils/axiosInstance';
 
 const FavoritesScreen = memo(() => {
   const { favorites, removeFavorite } = useContext(FavoritesContext);
   const router = useRouter();
   const { user } = useAuth();
+  const API_URL = api.defaults.baseURL;
 
   const handleRemove = useCallback((productId) => {
     removeFavorite(productId);
@@ -18,54 +19,89 @@ const FavoritesScreen = memo(() => {
 
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        <Text className="text-lg text-center text-red-500">Debes iniciar sesión para ver tus favoritos</Text>
+      <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
+        <View className="bg-white p-6 rounded-2xl shadow-md w-5/6 items-center">
+          <Text className="text-xl font-semibold text-gray-900 mb-4">
+            Inicia sesión para ver tus favoritos
+          </Text>
+          <TouchableOpacity 
+            onPress={() => router.push('/login')}
+            className="bg-emerald-500 py-2 px-6 rounded-full"
+          >
+            <Text className="text-white font-medium text-base">Iniciar sesión</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
+
   return (
-    <SafeAreaView className="flex-1 p-4 bg-white">
-      <View className="flex-1 p-4 bg-white">
-        <View className=''>
-            <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
-                            <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
-                                <IconArrowLeft color="#00732E"  />
-                            </TouchableOpacity>
-            </View>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <View className="flex-1 px-4">
+        {/* Header centrado con margen superior */}
+        <View className="items-center" style={{ marginTop: Platform.OS === 'ios' ? 40 : 30, marginBottom: 16 }}>
+          <Text className="text-3xl font-bold text-gray-900 text-center">
+            Mis Favoritos
+          </Text>
         </View>
-        <Text className="text-2xl text-center font-bold mb-4">Tus favoritos</Text>
 
+        {/* Lista de favoritos o estado vacío */}
         {favorites.length === 0 ? (
-          <Text className="text-gray-600">No tienes productos en favoritos.</Text>
+          <View className="flex-1 justify-center items-center">
+            <View className="items-center p-6 bg-white rounded-2xl w-full max-w-xs shadow-sm">
+              <IconHeart color="#9CA3AF" size={48} />
+              <Text className="text-lg font-medium text-gray-700 mt-4">
+                Lista vacía
+              </Text>
+              <Text className="text-gray-500 mt-1 text-center">
+                Guarda productos para verlos aquí
+              </Text>
+            </View>
+          </View>
         ) : (
-          <>
-            <FlatList
-              data={favorites}
-              keyExtractor={item => item?.id?.toString()}
-              renderItem={({ item }) => (
-                <View className="mb-4 p-3 bg-gray-100 rounded">
-                  <Link href={`/${item.product.id}`} asChild>
-                    <Text className="text-lg font-semibold text-blue-800">
-                      {item.product.name}
-                    </Text>
-                  </Link>
+          <FlatList
+            data={favorites}
+            keyExtractor={item => item?.id?.toString()}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 28 }}
+            renderItem={({ item }) => (
+              <View className="mb-5 bg-white rounded-xl shadow-lg overflow-hidden">
+                <Link href={`/${item.product.id}`} asChild>
+                  <TouchableOpacity className="flex-row p-5 items-center">
+                    <Image 
+                      source={{ 
+                        uri: item.product.images?.[0]
+                          ? `${API_URL}${item.product.images[0].image}` 
+                          : 'https://via.placeholder.com/120' 
+                      }}
+                      className="w-28 h-28 rounded-xl mr-4 bg-gray-100"
+                    />
+                    <View className="flex-1">
+                      <Text className="text-xl font-semibold text-gray-900 mb-1">
+                        {item.product.name}
+                      </Text>
+                      <Text className="text-2xl font-extrabold text-emerald-600 mb-1">
+                        ${item.product.price}
+                      </Text>
+                      <Text className="text-2 text-emerald-600 mb-1">
+                        {item.product.unit_of_measure}
+                      </Text>
 
-                  <Text className="text-green-600 mt-1">
-                    ${item.product.price}
-                  </Text>
-
-                  <TouchableOpacity
-                    onPress={() => removeFavorite(item.product.id)}
-                    className="mt-2"
-                  >
-                    <Text className="text-red-500">Quitar de favoritos</Text>
+                    </View>
                   </TouchableOpacity>
-                </View>
-              )}
-            />
+                </Link>
 
-            
-          </>
+                <TouchableOpacity
+                  onPress={() => removeFavorite(item.product.id)}
+                  className="border-t border-gray-200 py-3 items-center bg-gray-50"
+                >
+                  <Text className="text-red-500 font-medium text-base">
+                    Eliminar de favoritos
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
         )}
       </View>
     </SafeAreaView>
