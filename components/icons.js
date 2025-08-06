@@ -18,7 +18,7 @@ export const IconCoupons = () => <Foundation name="ticket" size={24} color="blac
 export const IconDiscount = () => <MaterialIcons name="discount" size={24} color="black" />;
 export const IconCategories = () => <Feather name="list" size={24} color="black" />;
 
-export const IconArrowLeft = () => <AntDesign name="arrowleft" size={30} color="black" />
+export const IconArrowLeft = () => <AntDesign name="left" size={20} color="black" />
 
 export const EyeWithLine=()=> <Entypo name="eye-with-line" size={24} color="black" />
 

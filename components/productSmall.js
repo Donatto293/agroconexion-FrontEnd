@@ -166,7 +166,10 @@ export default function ProductSmall({ products, loading, error }) {
                   }}
                 />
               )}
-              <Text style={{ color: '#00732E', fontSize: 16, fontWeight: 'bold' }}>${product.price}</Text>
+              <Text style={{ color: '#00732E', fontSize: 16, fontWeight: 'bold' }}>
+                ${product.price}
+                <Text style={{ color: '#6b7280', fontSize: 14 }}>/{product.unit_of_measure}</Text>
+              </Text>
             </Pressable>
           
             <Portal>

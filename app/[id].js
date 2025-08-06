@@ -22,10 +22,7 @@ import { useAuth } from '../context/authContext';
 
 const API_URL = api.defaults.baseURL;
 
-// Imports igual que antes...
-
 export default function ProductDetail() {
-  // Hooks y contextos
   const { id } = useLocalSearchParams();
   const { products, loading, error } = useProducts();
   const { addToCart } = useContext(CartContext);
@@ -39,6 +36,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuMessage, setMenuMessage] = useState("");
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [favoriteSuccessVisible, setFavoriteSuccessVisible] = useState(false);
 
   const showMenu = (msg) => { setMenuMessage(msg); setMenuVisible(true); };
   const closeMenu = () => setMenuVisible(false);
@@ -54,8 +53,26 @@ export default function ProductDetail() {
 
   const handleToggleFavorite = async () => {
     if (!user) return showMenu("Debes iniciar sesión para agregar a favoritos");
-    isFavorite ? await removeFavorite(productData.id) : await addFavorite(productData.id);
-    setIsFavorite(!isFavorite);
+    try {
+      if (isFavorite) {
+        await removeFavorite(productData.id);
+      } else {
+        await addFavorite(productData.id);
+        setFavoriteSuccessVisible(true);
+        setTimeout(() => setFavoriteSuccessVisible(false), 2000);
+      }
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      showMenu('Hubo un problema al actualizar tus favoritos');
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (!user) return showMenu("Debes iniciar sesión para agregar al carrito");
+    addToCart({ ...productData, quantity });
+    setSuccessVisible(true);
+    setTimeout(() => setSuccessVisible(false), 2000);
   };
 
   if (loading) return <ActivityIndicator size="large" color="#00732E" />;
@@ -68,11 +85,6 @@ export default function ProductDetail() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
       <ScrollView style={{ flex: 1, padding: 16 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#00732E' }}>← Volver</Text>
-        </TouchableOpacity>
-
-        {/* Icono de favoritos solo si hay stock */}
         {!isOutOfStock && (
           <TouchableOpacity onPress={handleToggleFavorite} style={styles.favoriteIcon}>
             {isFavorite ? <IconFavnot size={24} color="gray" /> : <IconFav size={24} color="red" />}
@@ -80,7 +92,6 @@ export default function ProductDetail() {
         )}
 
         <View style={styles.card}>
-          {/* Galería */}
           {productData.images?.map((img, index) => (
             <TouchableOpacity key={index} onPress={() => { setActiveImageIndex(index); setVisible(true); }}>
               <Image source={{ uri: `${API_URL}${img.image}` }} style={styles.image} />
@@ -90,53 +101,51 @@ export default function ProductDetail() {
           <Text style={styles.name}>{productData.name}</Text>
           <Text style={styles.desc}>{productData.description}</Text>
 
-          {/* Mensaje si está agotado */}
           {isOutOfStock && (
             <Text style={{ fontSize: 14, color: '#EF4444', marginBottom: 8 }}>
               Este producto estará disponible pronto
             </Text>
           )}
-          
-            <Text style={styles.measure}>{productData.unit_of_measure}</Text>
-          
+
+          <Text style={styles.measure}>{productData.unit_of_measure}</Text>
           <Text style={styles.price}>${productData.price}</Text>
 
-          {/* Selector de cantidad */}
           {!isOutOfStock && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
               <Text style={{ fontSize: 16, marginRight: 8 }}>Cantidad:</Text>
-              <TouchableOpacity onPress={() => setQuantity(q => Math.max(1, q - 1))}
-                style={{ backgroundColor: '#D1FAE5', padding: 8, borderRadius: 6, marginRight: 6 }}>
-                <Text style={{ fontSize: 16, color: '#00732E' }}>−</Text>
+              <TouchableOpacity
+                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
+                style={styles.quantityButton}
+              >
+                <Text style={styles.quantityButtonText}>−</Text>
               </TouchableOpacity>
-              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{quantity}</Text>
-              <TouchableOpacity onPress={() => setQuantity(q => Math.min(productData.stock, q + 1))}
-                style={{ backgroundColor: '#D1FAE5', padding: 8, borderRadius: 6, marginLeft: 6 }}>
-                <Text style={{ fontSize: 16, color: '#00732E' }}>+</Text>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity
+                onPress={() => setQuantity(prev => Math.min(productData.stock, prev + 1))}
+                style={styles.quantityButton}
+              >
+                <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
-              <Text style={{ marginLeft: 12, fontSize: 14, color: '#64748B' }}>
+              <Text style={styles.stockText}>
                 Stock: {productData.stock}
               </Text>
             </View>
           )}
 
-          {/* Botón de acción */}
           {isOutOfStock ? (
             <View style={[styles.addButton, { backgroundColor: '#D1D5DB' }]}>
               <Text style={[styles.addBtnText, { color: '#6B7280' }]}>Producto agotado</Text>
             </View>
           ) : (
-            <TouchableOpacity style={styles.addButton}
-              onPress={() => {
-                if (!user) return showMenu("Debes iniciar sesión para agregar al carrito");
-                addToCart(productData, quantity);
-              }}>
-              <Text style={styles.addBtnText}>Añadir al carrito</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddToCart}
+            >
+              <Text style={styles.addBtnText}>Añadir al carrito ({quantity})</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Modal */}
         <Modal animationType="slide" transparent visible={menuVisible} onRequestClose={closeMenu}>
           <Pressable style={styles.backdrop} onPress={closeMenu}>
             <View style={styles.bottomCard}>
@@ -149,6 +158,22 @@ export default function ProductDetail() {
               </TouchableOpacity>
             </View>
           </Pressable>
+        </Modal>
+
+        <Modal animationType="fade" transparent visible={successVisible} onRequestClose={() => setSuccessVisible(false)}>
+          <View style={styles.successBackdrop}>
+            <View style={styles.successMessage}>
+              <Text style={styles.successText}>¡{quantity} {productData.name} agregado(s) al carrito!</Text>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal animationType="fade" transparent visible={favoriteSuccessVisible} onRequestClose={() => setFavoriteSuccessVisible(false)}>
+          <View style={styles.successBackdrop}>
+            <View style={styles.successMessage}>
+              <Text style={styles.successText}>¡{productData.name} agregado a favoritos!</Text>
+            </View>
+          </View>
         </Modal>
       </ScrollView>
 
@@ -163,8 +188,8 @@ export default function ProductDetail() {
 }
 
 
+
 const styles = StyleSheet.create({
-  // Estilos para el componente
   centered: {
     flex: 1,
     justifyContent: "center",
@@ -224,11 +249,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  quantityButton: {
+    backgroundColor: "#D1FAE5",
+    padding: 8,
+    borderRadius: 6,
+  },
+  quantityButtonText: {
+    fontSize: 16,
+    color: "#00732E",
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginHorizontal: 10,
+  },
+  stockText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: '#64748B',
+  },
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
   },
-
   bottomCard: {
     backgroundColor: "#fff",
     padding: 24,
@@ -259,6 +302,23 @@ const styles = StyleSheet.create({
   measure: {
     fontSize: 14,
     color: "#1a836eff",
-   
+  },
+  successBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    marginBottom: 20,
+  },
+  successMessage: {
+    backgroundColor: 'rgba(0, 115, 46, 0.9)',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+  },
+  successText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

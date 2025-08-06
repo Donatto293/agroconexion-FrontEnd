@@ -62,15 +62,18 @@ const CartScreen = memo(() => {
   }, [cart, resetCart]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white p-2">
+    <SafeAreaView className="flex-1 bg-white p-2 mt-2">
       <View className="flex-1 p-4 mb-4">
         {/* Header */}
-        <View className="flex-row items-center mb-2">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full">
-            <IconArrowLeft color="#00732E" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold ml-4">Carrito de Compras</Text>
-        </View>
+       <View className="relative items-center mb-2">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="absolute left-2 p-2 rounded-full"
+        >
+          <IconArrowLeft color="#00732E" />
+        </TouchableOpacity>
+        <Text className="text-2xl font-bold text-center">Carrito de Compras</Text>
+      </View>
 
         {/* Contenido */}
         {cart.length === 0 ? (

@@ -29,8 +29,6 @@ export default function CategoryProductsScreen() {
           categoriesService.getAll()
         ]);
 
-
-
         const filtered = productsData.filter(p =>
           Array.isArray(p.category) && p.category.includes(Number(id))
         );
@@ -100,7 +98,11 @@ export default function CategoryProductsScreen() {
           const imageUrl = hasImages ? `${API_URL}${item.images[0].image}` : null;
 
           return (
-            <View style={styles.card}>
+            <TouchableOpacity
+              onPress={() => router.push(`/${item.id}`)}
+              style={styles.card}
+              activeOpacity={0.85}
+            >
               <View style={{ position: 'relative' }}>
                 {imageUrl ? (
                   <Image
@@ -139,13 +141,14 @@ export default function CategoryProductsScreen() {
                   <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         }}
       />
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
