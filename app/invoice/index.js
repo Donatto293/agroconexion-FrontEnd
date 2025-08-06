@@ -17,26 +17,37 @@ export default function InvoicesListScreen() {
   }, []);
 
   return (
-     <SafeAreaView className="flex-1 bg-white px-4 pt-4">
-      <Text className="text-2xl font-bold mb-4 text-green-900">Mis Facturas</Text>
+    <SafeAreaView className="flex-1 bg-gray-50 px-4 pt-10">
+      <View className="items-center mb-6">
+        <Text className="text-3xl font-bold text-emerald-800 tracking-tight">
+           Mis Facturas
+        </Text>
+      </View>
 
       <FlatList
         data={invoices}
         keyExtractor={inv => inv.id.toString()}
-        ItemSeparatorComponent={() => <View className="h-2" />}
+        ItemSeparatorComponent={() => <View className="h-4" />}
         renderItem={({ item }) => (
-          <Card 
-            onPress={() => router.push(`/invoice/${item.id}`)} 
-            className="rounded-lg"
+          <Card
+            onPress={() => router.push(`/invoice/${item.id}`)}
+            className="rounded-xl shadow-sm"
             mode="elevated"
+            style={{ backgroundColor: '#ffffff', elevation: 2 }}
           >
-            <Card.Title 
-              title={`Factura #${item.id}`} 
-              subtitle={`Método: ${item.method}`} 
-              right={(props) => <IconButton {...props} icon="chevron-right" />}
+            <Card.Title
+              title={`Factura #${item.id}`}
+              subtitle={`Método: ${item.method}`}
+              titleStyle={{ fontWeight: '600', fontSize: 16 }}
+              subtitleStyle={{ color: '#6B7280' }}
+              right={(props) => (
+                <IconButton {...props} icon="chevron-right" iconColor="#10B981" />
+              )}
             />
             <Card.Content>
-              <Text className="text-lg text-gray-800">Total: ${item.total}</Text>
+              <Text className="text-lg text-gray-700 font-semibold">
+                Total: ${item.total}
+              </Text>
             </Card.Content>
           </Card>
         )}

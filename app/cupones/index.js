@@ -12,7 +12,7 @@ const coupons = [
     description: '20% OFF en tu primera compra',
     discount: 20,
     code: 'BIENVENIDO20',
-    expiration: 'Válido hasta 30/06/2023',
+    expiration: 'Válido hasta 30/06/2026',
     image: require('../../assets/cupon1.png'),
     minPurchase: 50
   },
@@ -22,7 +22,7 @@ const coupons = [
     description: '15% OFF en compras mayores a $100',
     discount: 15,
     code: 'VERANO15',
-    expiration: 'Válido hasta 15/08/2023',
+    expiration: 'Válido hasta 15/08/2026',
     image: require('../../assets/cupon2.png'),
     minPurchase: 100
   },
@@ -32,7 +32,7 @@ const coupons = [
     description: 'Envío gratis en compras mayores a $150',
     discount: 0,
     code: 'ENVIOGRATIS',
-    expiration: 'Válido hasta 31/12/2023',
+    expiration: 'Válido hasta 31/12/2026',
     image: require('../../assets/cupon3.png'),
     minPurchase: 150,
     freeShipping: true
@@ -66,11 +66,7 @@ const router = useRouter()
   return (
     <SafeAreaView style={styles.container}>
              <View className=''>
-                        <View className=" w-20 h-16 justify-center items-center  rounded-lg  ">
-                                        <TouchableOpacity onPress={() => router.back()} className=" rounded-full m-2 ">
-                                            <IconArrowLeft color="#00732E"  />
-                                        </TouchableOpacity>
-                        </View>
+
         <Text style={styles.header}>Cupones Disponibles</Text>
         <Text style={styles.subheader}>Selecciona un cupón para aplicarlo a tu compra</Text>
         

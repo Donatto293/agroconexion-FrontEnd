@@ -17,24 +17,25 @@ const CATEGORY_COLORS = [
 
 // Mapeo exacto de iconos para tus categorías
 const CATEGORY_ICONS = {
-  'frutas': { icon: 'food-apple', lib: MaterialCommunityIcons },
-  'verduras': { icon: 'carrot', lib: FontAwesome5 },
-  'granos': { icon: 'wheat', lib: MaterialCommunityIcons },
-  'lacteos': { icon: 'cow', lib: MaterialCommunityIcons },
-  'carnes': { icon: 'food-steak', lib: MaterialCommunityIcons },
-  'embutidos': { icon: 'sausage', lib: MaterialCommunityIcons },
-  'huevos': { icon: 'egg', lib: MaterialCommunityIcons },
-  'panaderia': { icon: 'bread-slice', lib: FontAwesome5 },
-  'miel y derivados': { icon: 'honeycomb', lib: MaterialCommunityIcons },
-  'bebidas': { icon: 'cup', lib: MaterialCommunityIcons },
-  'bebidas fermentadas': { icon: 'beer-outline', lib: MaterialCommunityIcons },
+  frutas: { icon: 'food-apple', lib: MaterialCommunityIcons },
+  verduras: { icon: 'carrot', lib: FontAwesome5 },
+  granos: { icon: 'peanut', lib: MaterialCommunityIcons },
+  lacteos: { icon: 'cow', lib: MaterialCommunityIcons },
+  carnes: { icon: 'food-steak', lib: MaterialCommunityIcons },
+  embutidos: { icon: 'sausage', lib: MaterialCommunityIcons },
+  huevos: { icon: 'egg', lib: MaterialCommunityIcons },
+  panaderia: { icon: 'bread-slice', lib: MaterialCommunityIcons },
+  'miel y derivados': { icon: 'bee', lib: MaterialCommunityIcons },
+  bebidas: { icon: 'cup-water', lib: MaterialCommunityIcons },
+  'bebidas fermentadas': { icon: 'cup', lib: MaterialCommunityIcons },
   'productos organicos': { icon: 'leaf', lib: MaterialCommunityIcons },
-  'semillas': { icon: 'seed', lib: MaterialCommunityIcons },
-  'hecho a mano': { icon: 'hand-holding-heart', lib: FontAwesome5 },
+  semillas: { icon: 'seed', lib: MaterialCommunityIcons },
+  'hecho a mano': { icon: 'picture-o', lib: FontAwesome5 },
   'plantas y flores': { icon: 'flower', lib: MaterialCommunityIcons },
   'productos transformados': { icon: 'factory', lib: MaterialCommunityIcons },
-  'default': { icon: 'shopping', lib: MaterialCommunityIcons }
+  default: { icon: 'shopping', lib: MaterialCommunityIcons }
 };
+
 
 export default function CategoriesScreen() {
   const [categories, setCategories] = useState([]);
@@ -83,9 +84,9 @@ export default function CategoriesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.push("/inicio")} style={styles.backButton}>
-          <IconArrowLeft color="#00732E" size={24} />
-        </TouchableOpacity>
+
+
+
         <Text style={styles.headerTitle}>Nuestras Categorías</Text>
         <View style={styles.headerRightPlaceholder} />
       </View>
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     padding: 8
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1e293b',
     textAlign: 'center'

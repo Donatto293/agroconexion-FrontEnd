@@ -7,14 +7,11 @@ import { useAuth } from '../context/authContext';
 import { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../context/cartContext';
 import { FavoritesContext } from '../context/favoritesContext';
-
-
-
 import { IconPlus, IconFav, IconFavnot } from './icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import api from '../utils/axiosInstance';
 
-const API_URL = api.defaults.baseURL; //  Cambia por tu IP local o dominio backend
+const API_URL = api.defaults.baseURL;
 
 export default function ProductSmall({ products, loading, error }) {
   const router = useRouter();
@@ -22,10 +19,8 @@ export default function ProductSmall({ products, loading, error }) {
   const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
   const width = Dimensions.get('window').width;
   const { user } = useAuth();
-  //modal para los iconos de fav y carrito
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
-  
   
   const hideModal = () => setShowModal(false);
 
@@ -34,27 +29,16 @@ export default function ProductSmall({ products, loading, error }) {
     setShowModal(true);
   };
 
-
-
-  //animacion de boton plus de agregar al carrito
-  const scale= useSharedValue(1);
+  const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => {
-  return {
-    transform: [{ scale: scale.value }],
-  };
-})
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
 
-
-
-
-
-  
-  
-// Estado para manejar favoritos individualmente
   const [favoritesState, setFavoritesState] = useState({});
-  const [isProcessing, setIsProcessing] = useState(false); // para evitar múltiples clics
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Actualizar estado local cuando cambia el contexto
   useEffect(() => {
     const updatedState = {};
     favorites.forEach(fav => {
@@ -80,22 +64,20 @@ export default function ProductSmall({ products, loading, error }) {
       await addFavorite(product.id);
     }
 
-    // Actualizar inmediatamente el estado local
     setFavoritesState(prev => ({
       ...prev,
       [product.id]: !isFavorite
     }));
   }
 
- 
-  const MAX_SLIDES = 7; // Máximo de productos a mostrar en el carrusel
-  const randomProducts = products.sort(() => 0.5 - Math.random()).slice(0, MAX_SLIDES); // Selecciona los primeros MAX_SLIDES productos aleatorios
+  const MAX_SLIDES = 7;
+  const randomProducts = products.sort(() => 0.5 - Math.random()).slice(0, MAX_SLIDES);
 
   return (
     <Carousel
       width={width}
       height={300}
-      data={randomProducts} // Muestra productos aleatorios
+      data={randomProducts}
       autoPlay
       scrollAnimationDuration={3000}
       windowSize={5}
@@ -106,8 +88,7 @@ export default function ProductSmall({ products, loading, error }) {
         const isFavorite = favoritesState[product.id] === true;
         const imageUrl = product.images?.[0]?.image
           ? `${API_URL}${product.images[0].image}`
-          : 'https://via.placeholder.com/150'; // Si quieres evitar vacíos
-
+          : 'https://via.placeholder.com/150';
 
         return (
           <View style={{ backgroundColor: 'white', margin: 8, padding: 16, borderRadius: 12, shadowColor: '#000', elevation: 3 }}>
@@ -129,15 +110,13 @@ export default function ProductSmall({ products, loading, error }) {
 
             <TouchableRipple
               onPress={() => handleToggleFavorite(product)}
-              
               rippleColor="rgba(255, 0, 0, 0.2)"
               borderless
               style={{ position: 'absolute', bottom: 10, right: 10, borderRadius: 999, zIndex:10 }}
             >
               <View className="bg-white p-2 rounded-full border border-red-300">
-               {isFavorite ? (
-                <IconFavnot name="heart-outline" size={24} color="gray" />
-                  
+                {isFavorite ? (
+                  <IconFavnot name="heart-outline" size={24} color="gray" />
                 ) : (
                   <IconFav name="heart" size={24} color="red" />
                 )}
@@ -166,65 +145,59 @@ export default function ProductSmall({ products, loading, error }) {
                   }}
                 />
               )}
-              <Text style={{ color: '#00732E', fontSize: 16, fontWeight: 'bold' }}>${product.price}</Text>
+              <Text style={{ color: '#00732E', fontSize: 16, fontWeight: 'bold' }}>
+                ${product.price}
+                <Text style={{ color: '#6b7280', fontSize: 14 }}>/{product.unit_of_measure}</Text>
+              </Text>
             </Pressable>
           
             <Portal>
               <Dialog 
-              visible={showModal}
-              onDismiss={hideModal}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                margin: 0,
-                backgroundColor: '#ffffff',
-                borderRadius: 24,
-                paddingHorizontal: 10,
-                paddingVertical: 10,
-                marginHorizontal: 20,
-                elevation: 5,
-              }}
-
+                visible={showModal}
+                onDismiss={hideModal}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  margin: 0,
+                  backgroundColor: '#ffffff',
+                  borderRadius: 24,
+                  paddingHorizontal: 10,
+                  paddingVertical: 10,
+                  marginHorizontal: 20,
+                  elevation: 5,
+                }}
               >
                 <Dialog.Title>
-                   <Text className="text-lg font-bold text-green-800"> Atención</Text>
-                  </Dialog.Title>
+                  <Text className="text-lg font-bold text-green-800">Atención</Text>
+                </Dialog.Title>
                 <Dialog.Content>
                   <Text className="text-base text-gray-800">{modalMessage}</Text>
                 </Dialog.Content>
                 <Dialog.Actions>
                   <Button 
-                  onPress={hideModal}
-                  labelStyle={{ color: '#1f2937', fontWeight: 'bold' }} // text-gray-800
-                  style={{
-                    backgroundColor: '#a7f3d0', // bg-green-200
-                    borderRadius: 12,
-                    paddingHorizontal: 10,
-                    marginBottom: 10,
-                  }}
-
+                    onPress={hideModal}
+                    labelStyle={{ color: '#1f2937', fontWeight: 'bold' }}
+                    style={{
+                      backgroundColor: '#a7f3d0',
+                      borderRadius: 12,
+                      paddingHorizontal: 10,
+                      marginBottom: 10,
+                    }}
                   >
-                    Cerrar</Button>
+                    Cerrar
+                  </Button>
                 </Dialog.Actions>
               </Dialog>
             </Portal>
-
-
-  
           </View>
-          
-
-          
-          
         );
       }}
     />
-      
-
   );
 }
+
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,

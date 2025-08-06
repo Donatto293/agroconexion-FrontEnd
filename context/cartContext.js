@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useCallback, useMemo} from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCartAPI, addToCartAPI, removeFromCartAPI } from "../api/cart";
 
@@ -30,14 +30,12 @@ export const CartProvider = ({ children }) => {
     let newShippingDiscount = 0;
 
     if (appliedCoupon) {
-      // Descuento por porcentaje o monto fijo en productos
       if (appliedCoupon.type === 'percentage') {
         productDiscount = newSubtotal * (appliedCoupon.discount / 100);
       } else if (appliedCoupon.type === 'fixed') {
         productDiscount = appliedCoupon.discount;
       }
 
-      // Descuento por envío gratis
       if (appliedCoupon.freeShipping) {
         newShippingDiscount = SHIPPING_COST;
       }
@@ -84,11 +82,12 @@ export const CartProvider = ({ children }) => {
     setAppliedCoupon(null);
   };
 
-  // Agregar producto al carrito
+  // Agregar producto al carrito (MODIFICADO)
   const addToCart = async (product) => {
     const token = await AsyncStorage.getItem("accessToken");
     try {
-      await addToCartAPI(product.id, 1, token);
+      // Usamos product.quantity en lugar de 1
+      await addToCartAPI(product.id, product.quantity || 1, token);
       await loadCart();
     } catch (err) {
       console.error("Error al agregar al carrito:", err.response?.data || err);
@@ -123,7 +122,6 @@ export const CartProvider = ({ children }) => {
 
   const resetCart = () => setCart([]);
 
-  // 3) Memoizar el value
   const contextValue = useMemo(() => ({
     cart,
     subtotal,
@@ -154,7 +152,6 @@ export const CartProvider = ({ children }) => {
     removeCoupon
   ]);
 
-  // 4) Renderizar provider
   return (
     <CartContext.Provider value={contextValue}>
       {children}

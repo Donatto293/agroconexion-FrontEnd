@@ -65,11 +65,8 @@ const CartScreen = memo(() => {
     <SafeAreaView className="flex-1 bg-white p-2">
       <View className="flex-1 p-4 mb-4">
         {/* Header */}
-        <View className="flex-row items-center mb-2">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full">
-            <IconArrowLeft color="#00732E" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold ml-4">Carrito de Compras</Text>
+        <View className="mb-6 mt-4 flex items-center">
+        <Text className="text-3xl font-bold text-center">Carrito de Compras</Text>
         </View>
 
         {/* Contenido */}
