@@ -36,7 +36,7 @@ export default function InvoicesListScreen() {
             style={{ backgroundColor: '#ffffff', elevation: 2 }}
           >
             <Card.Title
-              title={`Factura #${item.id}`}
+              title={`Factura #${item.id}` + "       "+  `Fecha: ${new Date(item.date_created).toLocaleDateString()}`}
               subtitle={`Método: ${item.method}`}
               titleStyle={{ fontWeight: '600', fontSize: 16 }}
               subtitleStyle={{ color: '#6B7280' }}

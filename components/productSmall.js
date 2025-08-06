@@ -25,8 +25,14 @@ export default function ProductSmall({ products, loading, error }) {
   //modal para los iconos de fav y carrito
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
-  
-  
+
+
+  //constantes para los modales
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [successProductName, setSuccessProductName] = useState('');
+  const [favoriteSuccessVisible, setFavoriteSuccessVisible] = useState(false);
+  const [favoriteProductName, setFavoriteProductName] = useState('');
+    
   const hideModal = () => setShowModal(false);
 
   const showLoginAlert = (message) => {
@@ -78,6 +84,9 @@ export default function ProductSmall({ products, loading, error }) {
       await removeFavorite(product.id);
     } else {
       await addFavorite(product.id);
+      setFavoriteProductName(product.name);
+      setFavoriteSuccessVisible(true);
+      setTimeout(() => setFavoriteSuccessVisible(false), 2000);
     }
 
     // Actualizar inmediatamente el estado local
@@ -87,15 +96,30 @@ export default function ProductSmall({ products, loading, error }) {
     }));
   }
 
- 
+ // Generar productos aleatorios para el carrusel y por tiempo 
   const MAX_SLIDES = 7; // Máximo de productos a mostrar en el carrusel
-  const randomProducts = products.sort(() => 0.5 - Math.random()).slice(0, MAX_SLIDES); // Selecciona los primeros MAX_SLIDES productos aleatorios
+  const [displayedProducts, setDisplayedProducts] = useState([]);
 
+  useEffect(() => {
+    const updateRandomProducts = () => {
+      const shuffled = [...products].sort(() => 0.5 - Math.random());
+      setDisplayedProducts(shuffled.slice(0, MAX_SLIDES));
+    };
+
+    // Actualiza al montar
+    updateRandomProducts();
+
+    // Actualiza cada 30 minutos
+    const interval = setInterval(updateRandomProducts, 30 * 60 * 1000); // 30 min
+
+    // Limpia el intervalo al desmontar
+    return () => clearInterval(interval);
+  }, [products]); // Se ejecuta cuando cambian los productos
   return (
     <Carousel
       width={width}
       height={300}
-      data={randomProducts} // Muestra productos aleatorios
+      data={displayedProducts} // Muestra productos aleatorios
       autoPlay
       scrollAnimationDuration={3000}
       windowSize={5}
@@ -115,6 +139,9 @@ export default function ProductSmall({ products, loading, error }) {
               onPress={() => {
                 if (!user) return showLoginAlert('Debes iniciar sesión para agregar al carrito');
                 addToCart(product)
+                setSuccessProductName(product.name);
+                setSuccessVisible(true);
+                setTimeout(() => setSuccessVisible(false), 2000);
               }}
               onPressIn={() => (scale.value = withSpring(0.9))}
               onPressOut={() => (scale.value = withSpring(1))}
@@ -213,7 +240,73 @@ export default function ProductSmall({ products, loading, error }) {
                 </Dialog.Actions>
               </Dialog>
             </Portal>
+            {/* Modales para los botones agrega a carrito y favoritos */}
+       
+        
+              <Portal>
+                <Modal
+                  visible={successVisible}
+                  onDismiss={() => setSuccessVisible(false)}
+                  contentContainerStyle={{
+                    position: 'absolute',
+                    top: 40,
+                    left: 20,
+                    right: 20,
+                    backgroundColor: '#ffffff',
+                    borderRadius: 16,
+                    padding: 16,
+                    elevation: 3,
+                  }}
+                >
+                  <Text className="text-lg font-bold text-green-800">¡Éxito!</Text>
+                  <Text className="text-base text-gray-800 mt-2">¡{successProductName} agregado(s) al carrito!</Text>
+                  <Button
+                    onPress={() => setSuccessVisible(false)}
+                    labelStyle={{ color: '#1f2937', fontWeight: 'bold' }}
+                    style={{
+                      backgroundColor: '#a7f3d0',
+                      borderRadius: 12,
+                      paddingHorizontal: 10,
+                      marginTop: 12,
+                    }}
+                  >
+                    Cerrar
+                  </Button>
+                </Modal>
+              </Portal>
 
+              
+              <Portal>
+                <Modal
+                  visible={favoriteSuccessVisible}
+                  onDismiss={() => setFavoriteSuccessVisible(false)}
+                  contentContainerStyle={{
+                    position: 'absolute',
+                    top: 40,
+                    left: 20,
+                    right: 20,
+                    backgroundColor: '#ffffff',
+                    borderRadius: 16,
+                    padding: 16,
+                    elevation: 3,
+                  }}
+                >
+                  <Text className="text-lg font-bold text-green-800">¡Favorito!</Text>
+                  <Text className="text-base text-gray-800 mt-2">¡{favoriteProductName} agregado a favoritos!</Text>
+                  <Button
+                    onPress={() => setFavoriteSuccessVisible(false)}
+                    labelStyle={{ color: '#1f2937', fontWeight: 'bold' }}
+                    style={{
+                      backgroundColor: '#a7f3d0',
+                      borderRadius: 12,
+                      paddingHorizontal: 10,
+                      marginTop: 12,
+                    }}
+                  >
+                    Cerrar
+                  </Button>
+                </Modal>
+              </Portal>
 
   
           </View>
@@ -249,4 +342,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
   },
+   
 });
