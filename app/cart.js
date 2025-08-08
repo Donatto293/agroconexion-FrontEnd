@@ -5,9 +5,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
-  Image
+  Image,
+  Modal,
+  Pressable,
 } from 'react-native';
-import { memo, useContext, useCallback, useState } from 'react';
+import { memo, useContext, useCallback, useState, use } from 'react';
 import { Link } from 'expo-router';
 import { CartContext } from '../context/cartContext';
 import { IconArrowLeft, IconTrash } from '../components/icons';
@@ -16,6 +18,8 @@ import { createInvoiceFromCart } from '../api/invoices';
 import useProducts from '../api/products';
 import api from '../utils/axiosInstance';
 import ImageViewing from 'react-native-image-viewing';
+
+import PaymentScreen from '../components/payment';
 
 const CartScreen = memo(() => {
   const { cart, removeFromCart, clearCart, total, resetCart } = useContext(CartContext);
@@ -26,6 +30,10 @@ const CartScreen = memo(() => {
   const [visible, setVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  //modales para el pago
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentFormVisible, setPaymentFormVisible] = useState(false);
+ 
   const handleRemove = useCallback(() => {
     Alert.alert(
       "¿Vaciar carrito?",
@@ -37,7 +45,9 @@ const CartScreen = memo(() => {
     );
   }, []);
 
+  // Función para manejar el pago
   const handleCheckout = useCallback(async () => {
+    setPaymentModalVisible(false); // Cerramos el modal
     if (cart.length === 0) {
       Alert.alert("Carrito vacío", "Agrega productos al carrito antes de proceder.");
       return;
@@ -61,13 +71,37 @@ const CartScreen = memo(() => {
     }
   }, [cart, resetCart]);
 
+  //modal para el pago
+  const openPaymentModal = useCallback(() => {
+    if (cart.length === 0) {
+      Alert.alert("Carrito vacío", "Agrega productos al carrito antes de proceder.");
+      return;
+    }
+    setPaymentModalVisible(true); // Abrimos el modal
+  }, [cart]);
+
+  
+  const handlePaymentSuccess = () => {
+    setPaymentFormVisible(false);
+    handleCheckout();
+  };
+
+  
+
+
   return (
-    <SafeAreaView className="flex-1 bg-white p-2">
+    <SafeAreaView className="flex-1 bg-white p-2 mt-2">
       <View className="flex-1 p-4 mb-4">
         {/* Header */}
-        <View className="mb-6 mt-4 flex items-center">
-        <Text className="text-3xl font-bold text-center">Carrito de Compras</Text>
-        </View>
+       <View className="relative items-center mb-2">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="absolute left-2 p-2 rounded-full"
+        >
+          <IconArrowLeft color="#00732E" />
+        </TouchableOpacity>
+        <Text className="text-2xl font-bold text-center">Carrito de Compras</Text>
+      </View>
 
         {/* Contenido */}
         {cart.length === 0 ? (
@@ -149,12 +183,63 @@ const CartScreen = memo(() => {
               <Text className="text-center text-red-700 font-bold">Vaciar carrito</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleCheckout} className="mt-4 p-3 bg-yellow-200 rounded">
+            <TouchableOpacity onPress={openPaymentModal} className="mt-4 p-3 bg-yellow-200 rounded">
               <Text className="text-center text-yellow-700 font-bold">Proceder al pago</Text>
             </TouchableOpacity>
           </>
+
         )}
       </View>
+        {/* Modal de Confirmación de Pago */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={paymentModalVisible}
+          onRequestClose={() => setPaymentModalVisible(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="bg-white p-6 rounded-lg w-5/6 max-w-md">
+              <Text className="text-xl font-bold mb-4">Confirmar Pago</Text>
+              <Text className="text-lg mb-6">
+                ¿Estás seguro que deseas proceder con el pago de ${total.toFixed(2)}?
+              </Text>
+              
+              <View className="flex-row justify-between">
+                <Pressable
+                  className="px-6 py-3 bg-gray-300 rounded-lg"
+                  onPress={() => setPaymentModalVisible(false)}
+                >
+                  <Text className="font-medium">Cancelar</Text>
+                </Pressable>
+                
+                <Pressable
+                  className="px-6 py-3 bg-green-600 rounded-lg"
+                  onPress= {() => {
+                    setPaymentModalVisible(false);
+                    setPaymentFormVisible(true);
+                  }}
+                >
+                  <Text className="text-white font-medium">Confirmar Pago</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal con el formulario de pago */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={paymentFormVisible}
+        onRequestClose={() => setPaymentFormVisible(false)}
+      >
+        <PaymentScreen 
+          total={total}
+          onPaymentSuccess={handlePaymentSuccess}
+          onClose={() => setPaymentFormVisible(false)}
+        />
+      </Modal>
+
     </SafeAreaView>
   );
 });

@@ -11,16 +11,20 @@ import {
   View, 
   ScrollView, 
   Alert,
-  Animated
+  Animated,
+  
  } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-
+//compontents
+import Top_products from "../../components/top_products";
 import HeaderScreen from "../../components/header/Header";
+import Welcome from "../../components/welcome/welcome";
 import ProductSmall from "../../components/productSmall";
 import Products from "../../components/products";
+
 import useProducts from "../../api/products";
-import Welcome from "../../components/welcome/welcome";
+
 import CategoryCarousel from "../../components/carruseles/CategoryCarousel";
 import { categoriesService } from "../../api/categorias";
 import { useAuth } from "../../context/authContext";
@@ -29,6 +33,7 @@ import { SearchContext } from "../../context/SearchContext";
 import useBackButtonHandler from "../../hooks/useBackButtonHandler";
 import { BackHandler } from "react-native";
 import throttle from "lodash/throttle";
+import { useRouter } from "expo-router";
 
 
 import ScrollToTopButton from "../../components/scrollToTopButton";
@@ -39,7 +44,7 @@ export default function Inicio() {
   const { products, loading, error } = useProducts();
   
   const {user} = useAuth();
-
+  const router = useRouter();
   const {searchQuery} = useContext(SearchContext)
   
   // control botón scroll-to-top
@@ -70,17 +75,23 @@ useEffect(() => {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   // Hook para manejar el botón de retroceso en Android
-  // useBackButtonHandler(() => {
-  //   Alert.alert(
-  //     '¿Salir?',
-  //     '¿Deseas salir de la aplicación?',
-  //     [
-  //       { text: 'Cancelar', style: 'cancel' },
-  //       { text: 'Salir', onPress: () => BackHandler.exitApp() },
-  //     ]
-  //   )
-  //   return true
-  // })
+  useBackButtonHandler(() => {
+      //  if (router.canGoBack()) {
+      //   return false // Permite comportamiento normal (navegar atrás)
+      // }
+
+      // Si no hay más rutas a las que volver, muestra alerta de salir
+      Alert.alert(
+        '¿Salir?',
+        '¿Deseas salir de la aplicación?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Salir', onPress: () => BackHandler.exitApp() },
+        ]
+      )
+      return true
+    })
+  
 
 
   // Cargar categorías al inicio
@@ -197,12 +208,17 @@ useEffect(() => {
         )}
 
   {/*  Todos los productos */}
+   
   <Products products={products} loading={loading} error={error} />
+  <Top_products products={products} loading={loading} error={error} />
+
+ 
   </Animated.ScrollView>
   <ScrollToTopButton 
               scrollRef={scrollViewRef} 
               scrollOffset={showScrollButton} 
           />
+      
        
     </SafeAreaView>
   );
