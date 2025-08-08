@@ -19,6 +19,8 @@ import useProducts from '../api/products';
 import api from '../utils/axiosInstance';
 import ImageViewing from 'react-native-image-viewing';
 
+import PaymentScreen from '../components/payment';
+
 const CartScreen = memo(() => {
   const { cart, removeFromCart, clearCart, total, resetCart } = useContext(CartContext);
   const router = useRouter();
@@ -28,9 +30,10 @@ const CartScreen = memo(() => {
   const [visible, setVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  //modal para el pago
-   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-
+  //modales para el pago
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentFormVisible, setPaymentFormVisible] = useState(false);
+ 
   const handleRemove = useCallback(() => {
     Alert.alert(
       "¿Vaciar carrito?",
@@ -76,6 +79,14 @@ const CartScreen = memo(() => {
     }
     setPaymentModalVisible(true); // Abrimos el modal
   }, [cart]);
+
+  
+  const handlePaymentSuccess = () => {
+    setPaymentFormVisible(false);
+    handleCheckout();
+  };
+
+  
 
 
   return (
@@ -203,7 +214,10 @@ const CartScreen = memo(() => {
                 
                 <Pressable
                   className="px-6 py-3 bg-green-600 rounded-lg"
-                  onPress={handleCheckout}
+                  onPress= {() => {
+                    setPaymentModalVisible(false);
+                    setPaymentFormVisible(true);
+                  }}
                 >
                   <Text className="text-white font-medium">Confirmar Pago</Text>
                 </Pressable>
@@ -211,6 +225,20 @@ const CartScreen = memo(() => {
             </View>
           </View>
         </Modal>
+
+        {/* Modal con el formulario de pago */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={paymentFormVisible}
+        onRequestClose={() => setPaymentFormVisible(false)}
+      >
+        <PaymentScreen 
+          total={total}
+          onPaymentSuccess={handlePaymentSuccess}
+          onClose={() => setPaymentFormVisible(false)}
+        />
+      </Modal>
 
     </SafeAreaView>
   );

@@ -16,12 +16,15 @@ import {
  } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-
+//compontents
+import Top_products from "../../components/top_products";
 import HeaderScreen from "../../components/header/Header";
+import Welcome from "../../components/welcome/welcome";
 import ProductSmall from "../../components/productSmall";
 import Products from "../../components/products";
+
 import useProducts from "../../api/products";
-import Welcome from "../../components/welcome/welcome";
+
 import CategoryCarousel from "../../components/carruseles/CategoryCarousel";
 import { categoriesService } from "../../api/categorias";
 import { useAuth } from "../../context/authContext";
@@ -205,7 +208,11 @@ useEffect(() => {
         )}
 
   {/*  Todos los productos */}
+   
   <Products products={products} loading={loading} error={error} />
+  <Top_products products={products} loading={loading} error={error} />
+
+ 
   </Animated.ScrollView>
   <ScrollToTopButton 
               scrollRef={scrollViewRef} 
