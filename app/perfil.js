@@ -105,7 +105,7 @@ export default function PerfilScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>❤️ Productos Favoritos</Text>
           {favorites.length > 0 && (
-            <TouchableOpacity onPress={() => router.push('/favoritos')}>
+            <TouchableOpacity onPress={() => router.push('/favorites')}>
               <Text style={styles.seeAll}>Ver todos</Text>
             </TouchableOpacity>
           )}
