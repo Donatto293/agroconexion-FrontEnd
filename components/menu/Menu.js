@@ -1,90 +1,69 @@
-import React, { useState, useRef, useEffect, useContext, use } from 'react';
+import React, { useRef, useContext, useState } from 'react';
 import {
   Animated,
   View,
   Text,
   TouchableOpacity,
-  Image,
+  TouchableWithoutFeedback,
   Dimensions,
   StyleSheet,
   PanResponder,
-  TouchableWithoutFeedback,
-  Keyboard
+  ScrollView,
+  LayoutAnimation,
+  Platform,
+  UIManager
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import {
-  IconCoupons,
   IconShoppingCart,
   IconFavorites,
   IconHome,
   IconCategories,
-  IconDiscount,
-  IconUser
+  IconCoupons,
+  IconDiscount
 } from '../icons';
-import { Link, useRouter, usePathname } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
 import { useAuth } from '../../context/authContext';
-import { Portal } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MenuContext, useMenu } from '../../context/menuContext';
+import { useMenu } from '../../context/menuContext';
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+
 export default function Menu() {
-  const {logout, user} = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
- 
-
-  const slideAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
-  const buttonPosition = useRef(new Animated.ValueXY({ x: 20, y: 120 })).current;
-
+  const { user } = useAuth();
+  const { cart } = useContext(CartContext);
+  const { favorites } = useContext(FavoritesContext);
+  const { shouldHideMenu } = useMenu();
   const router = useRouter();
-  const { cart, resetCart } = useContext(CartContext);
-  const { favorites, clearFavorites  } = useContext(FavoritesContext);
-  //contexto del menú
-  const { menuMounted, setMenuMounted } = useContext(MenuContext);
-
-  
-  const username = user?.username;
-  const avatar = user?.avatar;
-
- 
-
-  const toggleMenu = () => {
-    if (menuOpen) {
-      setMenuMounted(false);
-      Animated.timing(slideAnim, {
-        toValue: -SCREEN_WIDTH,
-        duration: 300,
-        useNativeDriver: true
-      }).start(() => setMenuOpen(false));
-    } else {
-      setMenuOpen(true);
-      setMenuMounted(true);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true
-      }).start();
-    }
-  };
-
-  const handleLogout = async () => {
-    await AsyncStorage.multiRemove([
-      'accessToken',
-      'refreshToken',
-      'username',
-      'avatar'
-    ]);
-    logout(); // limpia el contexto global
-    clearFavorites();       // limpia FavoritesContext
-    resetCart();  // limpia CartContext
-    setMenuOpen(false);
-    router.replace('/');
-  };
 
   const pan = useRef(new Animated.ValueXY()).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const username = user?.username;
+
+  const [activeRoute, setActiveRoute] = useState('inicio');
+
+  const handleNavigate = (route) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setActiveRoute(route.replace('/', ''));
+    router.push(route);
+  };
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -105,19 +84,118 @@ export default function Menu() {
       }
     })
   ).current;
-  console.log('user Active:', username);
-  //rutas donde no se muestra el menú
-  const {shouldHideMenu} = useMenu();
-  if (shouldHideMenu) return null; // No renderizar el menú si estamos en una ruta que no lo requiere
 
+  if (shouldHideMenu) return null;
 
+  const handleCartPress = () => {
+    router.push(user ? '/cart' : '/login');
+  };
 
- return (
- 
-  <>
- 
-    <Portal>
-      {/* Botón flotante arrastrable */}
+  return (
+    <>
+      <View style={styles.menuContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.bottomMenu}
+          contentContainerStyle={styles.menuContent}
+        >
+          {/* Favoritos */}
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              activeRoute === 'favorites' && styles.activeItemBackground
+            ]}
+            onPress={() => handleNavigate(username ? '/favorites' : '/login')}
+          >
+            <IconFavorites size={24} color={activeRoute === 'favorites' ? '#00732E' : '#999'} />
+            {favorites.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{favorites.length}</Text>
+              </View>
+            )}
+            <Text style={[
+              styles.menuLabel,
+              activeRoute === 'favorites' && styles.activeLabel
+            ]}>
+              Favoritos
+            </Text>
+          </TouchableOpacity>
+
+          {/* Categorías */}
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              activeRoute === 'categorias' && styles.activeItemBackground
+            ]}
+            onPress={() => handleNavigate('/categorias')}
+          >
+            <IconCategories size={24} color={activeRoute === 'categorias' ? '#00732E' : '#999'} />
+            <Text style={[
+              styles.menuLabel,
+              activeRoute === 'categorias' && styles.activeLabel
+            ]}>
+              Categorías
+            </Text>
+          </TouchableOpacity>
+
+          {/* Inicio */}
+          <TouchableWithoutFeedback
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            onPress={() => handleNavigate('/inicio')}
+          >
+            <Animated.View
+              style={[
+                styles.menuItem,
+                styles.centerItem,
+                { transform: [{ scale: scaleAnim }] },
+              ]}
+            >
+              <IconHome size={28} color="#fff" />
+              <Text style={[styles.menuLabel, styles.centerLabel]}>
+                Inicio
+              </Text>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+
+          {/* Cupones */}
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              activeRoute === 'cupones' && styles.activeItemBackground
+            ]}
+            onPress={() => handleNavigate('/cupones')}
+          >
+            <IconCoupons size={24} color={activeRoute === 'cupones' ? '#00732E' : '#999'} />
+            <Text style={[
+              styles.menuLabel,
+              activeRoute === 'cupones' && styles.activeLabel
+            ]}>
+              Cupones
+            </Text>
+          </TouchableOpacity>
+
+          {/* Ofertas */}
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              activeRoute === 'ofertas' && styles.activeItemBackground
+            ]}
+            onPress={() => handleNavigate('/ofertas')}
+          >
+            <IconDiscount size={24} color={activeRoute === 'ofertas' ? '#00732E' : '#999'} />
+            <Text style={[
+              styles.menuLabel,
+              activeRoute === 'ofertas' && styles.activeLabel
+            ]}>
+              Ofertas
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
+      {/* Botón flotante del carrito */}
       <Animated.View
         {...panResponder.panHandlers}
         style={[
@@ -130,206 +208,128 @@ export default function Menu() {
           }
         ]}
       >
-        <TouchableOpacity onPress={toggleMenu} activeOpacity={0.8}>
-          <Ionicons name="finger-print" size={32} color="#00732E" />
+        <TouchableOpacity onPress={handleCartPress} activeOpacity={0.8}>
+          <View>
+            <IconShoppingCart size={32} color="#00732E" />
+            {cart.length > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cart.length}</Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
       </Animated.View>
-
-      {/* Menú lateral completo */}
-      {menuOpen && (
-        <>
-        <TouchableWithoutFeedback
-          onPress={() => {
-            Keyboard.dismiss();
-            if (menuOpen) toggleMenu();
-          }}
-        >
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              marginTop: "4%",
-              backgroundColor: 'rgba(0,0,0,0.3)', // Fondo oscurecido 
-              zIndex: 9999, // Asegurar que esta por encima de todo 
-            }}
-          >
-            <Animated.View style={[styles.panel, { transform: [{ translateX: slideAnim }] }]}>
-              <View style={styles.header}>
-                <Text style={styles.headerText}>Menú Principal</Text>
-              </View>
-
-              <View style={styles.panelContent}>
-                <Link href={username ? '/perfil' : '/login'} asChild>
-                  <TouchableOpacity style={styles.profileBox} onPress={toggleMenu}>
-                    {username && avatar ? (
-                      <Image source={{ uri: avatar }} style={styles.avatar} />
-                    ) : (
-                      <IconUser />
-                    )}
-                    <Text style={styles.profileText}>
-                      {username ? `${username}` : 'Inicia sesión'}
-                    </Text>
-                  </TouchableOpacity>
-                </Link>
-
-                {/* Opciones del menú */}
-                <Link href="/inicio" asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconHome size={22} color="#00732E" />
-                    <Text style={styles.label}>Inicio</Text>
-                  </TouchableOpacity>
-                </Link>
-
-                <Link href={username ? '/cart' : '/login'} asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconShoppingCart />
-                    <Text style={styles.label}>
-                      Carrito {cart.length > 0 && `(${cart.length})`}
-                    </Text>
-                  </TouchableOpacity>
-                </Link>
-
-                <Link href={username ? '/favorites' : '/login'} asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconFavorites />
-                    <Text style={styles.label}>
-                      Favoritos {favorites.length > 0 && `(${favorites.length})`}
-                    </Text>
-                  </TouchableOpacity>
-                </Link>
-
-                <Link href="/cupones" asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconCoupons />
-                    <Text style={styles.label}>Cupones</Text>
-                  </TouchableOpacity>
-                </Link>
-
-                <Link href="/ofertas" asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconDiscount />
-                    <Text style={styles.label}>Ofertas</Text>
-                  </TouchableOpacity>
-                </Link>
-
-                <Link href="/categorias" asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconCategories />
-                    <Text style={styles.label}>Categorías</Text>
-                  </TouchableOpacity>
-                </Link>
-
-                <Link href={username ? '/invoice' : '/login'} asChild>
-                  <TouchableOpacity style={styles.item} onPress={toggleMenu}>
-                    <IconShoppingCart />
-                    <Text style={styles.label}>Facturas</Text>
-                  </TouchableOpacity>
-                </Link>
-
-                {username && (
-                  <TouchableOpacity onPress={handleLogout} style={styles.logout}>
-                    <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-                    <Text style={styles.logoutText}>Cerrar sesión</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </Animated.View>
-          </View>
-        </TouchableWithoutFeedback>
-        </>
-      )}
-    </Portal>
-    
-  </>
-  
-);
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
-  draggableButton: {
+  menuContainer: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
-    zIndex: 100,
-    backgroundColor: '#ffffff',
-    borderRadius: 40,
-    padding: 10,
-    elevation: 8
-  },
-  panel: {
-    position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
-    height: '10000%',
-    width: SCREEN_WIDTH * 0.5,
+    right: 0,
     backgroundColor: '#ffffff',
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 10,
-    zIndex: 50
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5e5',
+    paddingBottom: 25,
   },
-  header: {
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    backgroundColor: '#f9fafb'
+  bottomMenu: {
+    width: '100%',
+    paddingVertical: 2,
   },
-  headerText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#00732E',
-  
-  },
-  panelContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 10
-  },
-  profileBox: {
+  menuContent: {
     flexDirection: 'row',
-   
+    justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#00732E',
-    padding: 12,
+    paddingHorizontal: 8,
+  },
+  menuItem: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    minWidth: 70,
+    position: 'relative',
     borderRadius: 12,
-    marginBottom: 24
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20
+  centerItem: {
+    marginHorizontal: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 32,
+    backgroundColor: '#00994D',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
   },
-  profileText: {
+  menuLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    color: '#000',
+    fontWeight: '600',
+  },
+  centerLabel: {
     color: '#fff',
-    fontSize: 16,
+    fontWeight: '600',
+  },
+  activeLabel: {
+    color: '#00732E',
+  },
+  activeItemBackground: {
+    backgroundColor: '#E6F4EC',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#dc2626',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
     fontWeight: 'bold',
-    marginLeft: 10
   },
-  item: {
-    flexDirection: 'row',
+draggableButton: {
+  position: 'absolute',
+  bottom: '12%',
+  right: 16, // 👈 Lo movemos a la derecha
+  backgroundColor: '#ffffff',
+  borderRadius: 40,
+  borderBottomWidth: 9, // Grosor del borde inferior
+  
+
+  borderBottomColor: '#04a909ff', // Color rojo
+  padding: 16,
+  elevation: 30,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  zIndex: 100,
+
+},
+
+  cartBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#dc2626',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 14
   },
-  label: {
-    fontSize: 16,
-    marginLeft: 12,
-    color: '#1e293b'
+  cartBadgeText: {
+    color: 'white',
+    fontSize: 12,
+   
+    fontWeight: 'bold',
   },
-  logout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 30,
-    backgroundColor: '#fee2e2',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10
-  },
-  logoutText: {
-    fontSize: 16,
-    marginLeft: 8,
-    color: '#dc2626'
-  }
 });

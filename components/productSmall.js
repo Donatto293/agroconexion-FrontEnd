@@ -95,7 +95,7 @@ const ProductItem = memo(({ product, user }) => {
     : 'https://via.placeholder.com/150';
 
   return (
-    <View style={{ backgroundColor: 'white', margin: 8, padding: 16, borderRadius: 12, shadowColor: '#000', elevation: 3 }}>
+    <View style={{ backgroundColor: 'white', margin: 5, padding: 16, borderRadius: 12, shadowColor: '#000', elevation: 3 }}>
       <TouchableRipple
         onPress={handleAddToCart}
         onPressIn={() => (scale.value = withSpring(0.9))}

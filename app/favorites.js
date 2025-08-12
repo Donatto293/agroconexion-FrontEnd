@@ -11,9 +11,8 @@ export default function FavoritesScreen() {
   const { user } = useAuth();
   const API_URL = api.defaults.baseURL;
 
-  const handleRemove = useCallback((productId) => {
-    removeFavorite(productId);
-  }, []);
+ 
+
 
   if (!user) {
     return (
@@ -56,7 +55,7 @@ export default function FavoritesScreen() {
         ) : (
           <FlatList
             data={favorites}
-            keyExtractor={item => item?.id?.toString()}
+            keyExtractor={item => item?.product?.id?.toString()}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 28 }}
             renderItem={({ item }) => (

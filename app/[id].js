@@ -7,7 +7,9 @@ import {
   ScrollView,
   Modal,
   Pressable,
-  StyleSheet
+  StyleSheet,
+  TextInput,
+  Keyboard
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import useProducts from '../api/products';
@@ -33,11 +35,12 @@ export default function ProductDetail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [visible, setVisible] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState('1');
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuMessage, setMenuMessage] = useState("");
   const [successVisible, setSuccessVisible] = useState(false);
   const [favoriteSuccessVisible, setFavoriteSuccessVisible] = useState(false);
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
 
   const showMenu = (msg) => { setMenuMessage(msg); setMenuVisible(true); };
   const closeMenu = () => setMenuVisible(false);
@@ -68,9 +71,54 @@ export default function ProductDetail() {
     }
   };
 
+  const handleQuantityChange = (text) => {
+    // Permite solo números y vacío (para poder borrar)
+    if (/^\d*$/.test(text)) {
+      setQuantity(text);
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    setIsEditingQuantity(false);
+    let qty = parseInt(quantity) || 0;
+    
+    if (qty < 1) {
+      qty = 1;
+    } else if (productData.stock && qty > productData.stock) {
+      qty = productData.stock;
+    }
+    
+    setQuantity(qty.toString());
+  };
+
+  const incrementQuantity = () => {
+    let qty = parseInt(quantity) || 0;
+    if (productData.stock && qty >= productData.stock) {
+      showMenu(`No puedes agregar más de ${productData.stock} unidades`);
+      return;
+    }
+    setQuantity((qty + 1).toString());
+  };
+
+  const decrementQuantity = () => {
+    let qty = parseInt(quantity) || 0;
+    if (qty <= 1) {
+      showMenu("La cantidad mínima es 1");
+      return;
+    }
+    setQuantity((qty - 1).toString());
+  };
+
   const handleAddToCart = () => {
     if (!user) return showMenu("Debes iniciar sesión para agregar al carrito");
-    addToCart({ ...productData, quantity });
+
+    const qty = parseInt(quantity);
+    if (isNaN(qty) || qty <= 0) {
+      showMenu("Ingresa una cantidad válida");
+      return;
+    }
+
+    addToCart({ ...productData, quantity: qty });
     setSuccessVisible(true);
     setTimeout(() => setSuccessVisible(false), 2000);
   };
@@ -111,21 +159,46 @@ export default function ProductDetail() {
           <Text style={styles.price}>${productData.price}</Text>
 
           {!isOutOfStock && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <Text style={{ fontSize: 16, marginRight: 8 }}>Cantidad:</Text>
-              <TouchableOpacity
-                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-                style={styles.quantityButton}
-              >
-                <Text style={styles.quantityButtonText}>−</Text>
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity
-                onPress={() => setQuantity(prev => Math.min(productData.stock, prev + 1))}
-                style={styles.quantityButton}
-              >
-                <Text style={styles.quantityButtonText}>+</Text>
-              </TouchableOpacity>
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 16, marginBottom: 4 }}>Cantidad:</Text>
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity 
+                  style={styles.quantityButton} 
+                  onPress={decrementQuantity}
+                  disabled={parseInt(quantity) <= 1}
+                >
+                  <Text style={styles.quantityButtonText}>-</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.quantityInputContainer}
+                  onPress={() => setIsEditingQuantity(true)}
+                >
+                  {isEditingQuantity ? (
+                    <TextInput
+                      value={quantity}
+                      onChangeText={handleQuantityChange}
+                      onBlur={handleQuantityBlur}
+                      onSubmitEditing={handleQuantityBlur}
+                      keyboardType="numeric"
+                      autoFocus
+                      style={styles.quantityInput}
+                      selectTextOnFocus
+                    />
+                  ) : (
+                    <Text style={styles.quantityText}>{quantity}</Text>
+                  )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.quantityButton} 
+                  onPress={incrementQuantity}
+                  disabled={productData.stock && parseInt(quantity) >= productData.stock}
+                >
+                  <Text style={styles.quantityButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+              
               <Text style={styles.stockText}>
                 Stock: {productData.stock}
               </Text>
@@ -187,8 +260,6 @@ export default function ProductDetail() {
   );
 }
 
-
-
 const styles = StyleSheet.create({
   centered: {
     flex: 1,
@@ -249,24 +320,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   quantityButton: {
     backgroundColor: "#D1FAE5",
     padding: 8,
     borderRadius: 6,
+    width: 40,
+    alignItems: 'center',
   },
   quantityButtonText: {
     fontSize: 16,
     color: "#00732E",
+    fontWeight: 'bold',
+  },
+  quantityInputContainer: {
+    marginHorizontal: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  quantityInput: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#111',
+    borderBottomWidth: 1,
+    borderBottomColor: '#00732E',
+    padding: 4,
+    minWidth: 40,
   },
   quantityText: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginHorizontal: 10,
+    color: '#111',
+    paddingHorizontal: 12,
   },
   stockText: {
-    marginLeft: 12,
     fontSize: 14,
     color: '#64748B',
+    marginTop: 4,
   },
   backdrop: {
     flex: 1,

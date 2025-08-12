@@ -1,7 +1,7 @@
 import axios from 'axios';
 import api from '../utils/axiosInstance'
 
-const API_URL = 'api/users/cart/user/cart/';
+const API_URL = 'api/cart/my-cart/';
 //cargar carrito
 export async function getCartAPI(token) {
     const response = await api.get(API_URL, {

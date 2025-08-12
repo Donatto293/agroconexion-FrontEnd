@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 
 import api from '../utils/axiosInstance';
 
-const API_URL ='/api/users/invoices/top-selling/';
+const API_URL ='/api/invoices/top-selling/';
 
 export default function useTopProducts() {
     const [products, setProducts] = useState([]);

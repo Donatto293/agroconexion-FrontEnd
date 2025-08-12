@@ -11,7 +11,11 @@ export const FavoritesProvider = ({ children }) => {
     const token = await AsyncStorage.getItem('accessToken');
     try {
       const data = await getFavorites(token);
-      setFavorites(data); // o data.products según tu backend
+      const normalized = data.map(fav => ({
+        ...fav,
+        product: fav.product_detail // creamos la clave product
+      }));
+      setFavorites(normalized); // o data.products según tu backend
     } catch (err) {
       console.error("Error loading favorites:", err);
     }
