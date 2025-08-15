@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { Stack } from "expo-router";
 
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Menu from "../components/menu/Menu";
 
 
@@ -14,8 +14,24 @@ import { FavoritesProvider } from "../context/favoritesContext";
 import { SearchProvider } from "../context/SearchContext";
 import { MenuProvider , MenuContext } from "../context/menuContext";
 import { CartProvider } from "../context/cartContext";
+import { MENU_HEIGHT } from "../context/menuContext";
 
+function AppWithStack() {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = MENU_HEIGHT + insets.bottom; // espacio del menu + safe area
 
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { paddingBottom: bottomPadding } // <-- aplica padding global a todas las pantallas
+        }}
+      />
+      <Menu />
+    </View>
+  );
+}
 
 export default function Layout(){
 
@@ -37,16 +53,10 @@ export default function Layout(){
             <CartProvider>
               <FavoritesProvider>
                 
-                  <View className="flex-1">
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                      }}
-
-                    />
-                      <Menu />
-
-                  </View>
+                  
+                    <AppWithStack />
+                     
+                  
                 
               </FavoritesProvider>
             </CartProvider>

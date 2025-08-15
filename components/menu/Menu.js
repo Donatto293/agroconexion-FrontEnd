@@ -225,12 +225,13 @@ export default function Menu() {
 
 const styles = StyleSheet.create({
   menuContainer: {
+    
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: '#ffffff',
-    borderTopWidth: 1,
+    
     borderTopColor: '#e5e5e5',
     paddingBottom: 25,
   },

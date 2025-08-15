@@ -168,58 +168,58 @@ useEffect(() => {
 
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100" edges={["top", "bottom"]}>
-      <View className="position-absolute w-full h-50 bg-[#00732E]">
-        <HeaderScreen />
-      </View>
+      <SafeAreaView className="flex-1 bg-gray-100" edges={["top", "bottom"]}>
+        <View className="position-absolute w-full h-50 bg-[#00732E]">
+          <HeaderScreen />
+        </View>
+        
+
+
+    <Animated.ScrollView
+          ref={scrollViewRef}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          {
+              useNativeDriver: false,
+              listener: (event) => {
+                  const offsetY = event.nativeEvent.contentOffset.y;
+                  handleScroll(offsetY);
+              }
+          }
+      )}
+          contentContainerStyle={{ paddingTop: 20 }}
+        >
       
+  {/* Si NO estamos buscando, renderizo carrusel y ProductSmall */}
+          {!searchQuery && (
+            <>
 
+    {/*  Carrusel de categorías con espacio */}
+    <View style={{ marginBottom: "2%", }}>
+      <CategoryCarousel categories={memoizedCategories} />
+    </View>
 
-  <Animated.ScrollView
-        ref={scrollViewRef}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-        {
-            useNativeDriver: false,
-            listener: (event) => {
-                const offsetY = event.nativeEvent.contentOffset.y;
-                handleScroll(offsetY);
-            }
-        }
-    )}
-        contentContainerStyle={{ paddingTop: 25 }}
-      >
-     
- {/* Si NO estamos buscando, renderizo carrusel y ProductSmall */}
-        {!searchQuery && (
-          <>
+    {/*  Productos pequeños destacados */}
+    <View style={{ marginBottom: '-9%'}}>
+      <ProductSmall products={products} loading={loading} error={error} />
+    </View>
+          </>
+          )}
 
-  {/*  Carrusel de categorías con espacio */}
-  <View style={{ marginBottom: "2%", }}>
-    <CategoryCarousel categories={memoizedCategories} />
-  </View>
+    {/*  Todos los productos */}
+    
+    <Products products={products} loading={loading} error={error} />
+    <Top_products products={products} loading={loading} error={error} />
 
-  {/*  Productos pequeños destacados */}
-  <View style={{ marginBottom: '-9%'}}>
-    <ProductSmall products={products} loading={loading} error={error} />
-  </View>
-         </>
-        )}
-
-  {/*  Todos los productos */}
-   
-  <Products products={products} loading={loading} error={error} />
-  <Top_products products={products} loading={loading} error={error} />
-
- 
-  </Animated.ScrollView>
-  <ScrollToTopButton 
-              scrollRef={scrollViewRef} 
-              scrollOffset={showScrollButton} 
-          />
-      
-       
-    </SafeAreaView>
+  
+    </Animated.ScrollView>
+    <ScrollToTopButton 
+                scrollRef={scrollViewRef} 
+                scrollOffset={showScrollButton} 
+            />
+        
+        
+      </SafeAreaView>
   );
 }
