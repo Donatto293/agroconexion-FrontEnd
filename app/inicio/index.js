@@ -201,7 +201,7 @@ useEffect(() => {
   </View>
 
   {/*  Productos pequeños destacados */}
-  <View style={{ marginBottom: 0}}>
+  <View style={{ marginBottom: '-9%'}}>
     <ProductSmall products={products} loading={loading} error={error} />
   </View>
          </>

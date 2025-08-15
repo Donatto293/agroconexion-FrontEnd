@@ -1,12 +1,29 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFavorites, addFavoriteAPI,removeFavoriteAPI } from '../api/favorites';
+import { useAuth } from './authContext';
 
 export const FavoritesContext = createContext();
 
 export const FavoritesProvider = ({ children }) => {
  const [favorites, setFavorites] = useState([]);
+ const {user} =useAuth()
 
+
+  // Cargar favoritos apenas se inicie la app
+  useEffect(() => {
+    const load = async () => {
+      if (user?.token) {
+        await fetchFavorites();
+      } else {
+        clearFavorites();
+      }
+    };
+    
+    load();
+  }, [user?.token]);
+
+  //buscar favoritos
   const fetchFavorites = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     try {
@@ -21,6 +38,7 @@ export const FavoritesProvider = ({ children }) => {
     }
   };
 
+  //añadir a favoritos
   const addFavorite = async (productId) => {
     const token = await AsyncStorage.getItem("accessToken");
     try {
@@ -31,6 +49,8 @@ export const FavoritesProvider = ({ children }) => {
     }
   };
 
+
+  //eliminar de favoritos
   const removeFavorite = async (productId) => {
     const token = await AsyncStorage.getItem("accessToken");
     try {
@@ -42,7 +62,7 @@ export const FavoritesProvider = ({ children }) => {
   };
 
   
-
+  //vaciar favoritos
   const clearFavorites = () => setFavorites([]);
 
 const contextValue = useMemo(() => ({

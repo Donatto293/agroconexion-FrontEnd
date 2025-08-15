@@ -1,14 +1,24 @@
-import { Text, View, TouchableOpacity, Alert, ScrollView, Switch, Image, formData} from "react-native";
+import { Text, View, TouchableOpacity, Alert, ScrollView, Switch, Image, formData,KeyboardAvoidingView, Platform,} from "react-native";
 import { useState , useRef} from "react";
 import { useRouter } from 'expo-router';
 import { IconArrowLeft } from "../icons";
-import { TextInput, IconButton, } from 'react-native-paper';
+import { TextInput, IconButton, Menu, Button} from 'react-native-paper';
+
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
+
+
+
+import {  userRegister } from "../../api/user";
 import api from "../../utils/axiosInstance";
+
+
 
 
 //import para las imagenes 
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { getApiErrorMessage } from "../../utils/getApiError";
 
 
 export default function Register() {
@@ -22,6 +32,8 @@ export default function Register() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [address, setAddress] = useState('');
     const [isSeller, setIsSeller] = useState(false);
+    
+    
 
     //mostrar contraseña 
     const [showPassword, setShowPassword] = useState(false);
@@ -87,18 +99,104 @@ export default function Register() {
         }
     };
 
-  // Función para seleccionar documento RUT
+    // Función para seleccionar documento RUT
     const pickRutDocument = async () => {
-        const result = await DocumentPicker.getDocumentAsync({
-            type: 'application/pdf',
-        });
+        try {
+                const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: true, // importante en Android para obtener una uri accesible
+            });
 
-        if (result.type === 'success') {
-            setRutDocument(result);
-        }
-    };
+            console.log('DocumentPicker result:', result);
+
+            if (!result.canceled) {
+                // result: { uri, name, size, mimeType?, type: 'success' }
+                const file = result.assets[0];
+                setRutDocument(file);
+                
+            } else {
+                // usuario canceló
+                console.log('Usuario canceló selección de documento');
+            }
+            } catch (err) {
+                console.error('Error al abrir DocumentPicker:', err);
+                Alert.alert('Error', 'No se pudo abrir el selector de documentos');
+            }
+            };
 
 
+    //funcion para la opcion multiple
+    const orgTypeOptions = [
+        { label: 'Cooperativa', value: 'cooperative' },
+        { label: 'Asociación', value: 'association' },
+        { label: 'Grupo informal', value: 'informal' },
+        { label: 'Otro', value: 'other' },
+    ];
+
+    const OrganizationTypeDropdown = ({ organizationType, setOrganizationType, validateField, errors }) => {
+    const [visible, setVisible] = useState(false);
+
+    const openMenu = () => setVisible(true);
+    const closeMenu = () => setVisible(false);
+
+  const selectedLabel =
+    orgTypeOptions.find(opt => opt.value === organizationType)?.label || 'Selecciona tipo de organización';
+        return (
+            <View style={{ width: '100%', marginBottom: 8 }}>
+            <Menu
+                visible={visible}
+                onDismiss={closeMenu}
+                anchor={
+                <Button
+                    mode="outlined"
+                    onPress={openMenu}
+                    style={{
+                    justifyContent: 'space-between',
+                    backgroundColor: 'white',
+                    borderColor: errors.organizationType ? 'red' : '#ccc',
+                    borderRadius: 0,
+                    height: 50,
+                    width: '100%',
+                    }}
+                    labelStyle={{
+                        color: 'black',            // 🔹 Texto negro
+                        textAlign: 'left'
+                    }}
+                    contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between', height:50 }}
+                    icon="chevron-down"           // 🔹 Flechita hacia abajo (MaterialCommunityIcons)
+                    iconPosition="right"    
+                >
+
+                    
+                    {selectedLabel}
+                </Button>
+                }
+                style={{
+                    backgroundColor: 'white',
+                    width: '92%',
+                    
+                }}
+            >
+                {orgTypeOptions.map(option => (
+                <Menu.Item
+                    key={option.value}
+                    onPress={() => {
+                    setOrganizationType(option.value); // Guarda valor inglés
+                    validateField('organizationType', option.value);
+                    closeMenu();
+                    }}
+                    title={option.label}
+                />
+                ))}
+            </Menu>
+            {errors.organizationType && (
+                <Text style={{ color: 'red', fontSize: 12, marginTop: 4 }}>
+                {errors.organizationType}
+                </Text>
+            )}
+            </View>
+        );
+        };
 
     // Función para validar un campo específico
     const validateField = (fieldName, value) => {
@@ -222,6 +320,7 @@ export default function Register() {
             validateField('legalRepresentative', legalRepresentative),
             validateField('representativeCedula', representativeCedula),
             validateField('phoneNumber', phoneNumber),
+            
         ] : [];
         
         // Combinar todas las validaciones
@@ -258,54 +357,55 @@ export default function Register() {
         
         
         
-        
+    
+
         try {
-            let endpoint = '/api/users/register/';
-            
-            // Preparar datos para enviar al backend
+        let endpoint = '/api/users/register/';
+        const formData = new FormData();
 
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('email', email);
-            formData.append('password', password);
-            formData.append('password2', password2);
-                
-                // Si es vendedor, usar endpoint de agrupación y añadir datos adicionales
-            if (isSeller) {
-                endpoint = '/api/users/register-group/';
-                formData.append('phone_number', phoneNumber);
-                formData.append('address', address);
-                formData.append('profile_image', null); // Aquí luego puedes agregar imagen si se usa
+        formData.append('username', username);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('password2', password2);
+        
 
-                formData.append('nit', nit);
-                formData.append('organization_type', organizationType);
-                formData.append('legal_representative', legalRepresentative);
-                formData.append('representative_cedula', representativeCedula);
+        if (isSeller) {
+            endpoint = '/api/users/group/register/';
+            formData.append('phone_number', String(phoneNumber));
+            formData.append('address', String(address));
 
-                if (representativeCedulaImage) {
-                    formData.append('image_cedula', {
-                        uri: representativeCedulaImage.uri,
-                        type: representativeCedulaImage.type || 'image/jpeg',
-                        name: representativeCedulaImage.fileName || 'cedula.jpg',
-                    });
-                }
+            formData.append('group_profile.nit', String(nit));
+            formData.append('group_profile.organization_type', String(organizationType));
+            formData.append('group_profile.legal_representative', String(legalRepresentative));
+            formData.append('group_profile.representative_cedula', String(representativeCedula));
 
-                if (representativeRutDocument) {
-                    formData.append('rut_document', {
-                        uri: representativeRutDocument.uri,
-                        type: representativeRutDocument.type || 'application/pdf',
-                        name: representativeRutDocument.fileName || 'rut.pdf',
-                    });
-                }
+            if (cedulaImage?.uri) {
+                formData.append('group_profile.image_cedula', {
+                    uri: cedulaImage.uri,
+                    name: cedulaImage.name || 'cedula.jpg',
+                    type: 'image/jpeg'
+                });
             }
 
-            // Enviar petición de registro
-            const response = await api.post(endpoint, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            if (rutDocument?.uri) {
+                formData.append('group_profile.rut_document', {
+                    uri: rutDocument.uri,
+                    name: rutDocument.name || 'rut.pdf',
+                    type: 'application/pdf'
+                });
+            }  
+                                        
+        }
+          
+        
 
+           
+            const response = await userRegister(endpoint, formData)
+
+
+                
+                
+            console.log('Response status:', response.status, 'body:', data);
             // Si el registro es exitoso (código 201)
             if (response.status === 201) {
                 // Guardar el email para la verificación
@@ -324,12 +424,25 @@ export default function Register() {
                 });
             } else {
                 // Manejar otros códigos de estado
-                handleBackendErrors(response.data);
+                handleBackendErrors(data);
             }
+
+            
+
+            // // Enviar petición de registro
+            // const response = await api.post(endpoint, formData, {
+            //     headers: {
+            //         'Content-Type': 'multipart/form-data'
+            //     }
+            // });
+
         } catch (error) {
             console.error('Registration error:', error.response?.data || error.message);
             if (error.response) {
                 handleBackendErrors(error.response.data);
+                msg = getApiErrorMessage(error)
+                Alert.alert('Error', msg);
+
             } else {
                 Alert.alert('Error', 'Error de conexión con el servidor');
             }
@@ -370,7 +483,15 @@ export default function Register() {
     };
 
     return (
-        <ScrollView className="flex-1 bg-white">
+           <KeyboardAwareScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ padding: 16 }}
+                    enableOnAndroid
+                    extraScrollHeight={150}
+                    keyboardShouldPersistTaps="handled"
+                >
+         
+       
             <View className="bg-[#9e9fa0] w-20 h-16 justify-center items-center rounded-lg">
                 <TouchableOpacity onPress={() => router.back()} className="rounded-full m-2">
                     <IconArrowLeft color="#00732E" />
@@ -381,7 +502,7 @@ export default function Register() {
                 <Text className="text-2xl font-bold mb-4">Registrarse</Text>
                 
               
-                
+             
                 {/* Campos comunes */}
                 <TextInput
                     label="Nombre Completo"
@@ -505,24 +626,13 @@ export default function Register() {
                         />
                         {errors.nit && <Text className="text-red-500 text-sm mb-3 w-full">{errors.nit}</Text>}
                         
-                        <TextInput
-                            ref={orgTypeRef}
-                            label="Tipo de Organización"
-                            value={organizationType}
-                            onChangeText={text => {
-                                setOrganizationType(text);
-                                validateField('organizationType', text);
-                            }}
-                            onSubmitEditing={() => legalRepRef.current.focus()}
-                            returnKeyType="next"
-                            mode="outlined"
-                            outlineColor="#ccc"
-                            activeOutlineColor="#00732E"
-                            style={{ width: '100%', marginBottom: 8, backgroundColor: 'white' }}
-                            error={!!errors.organizationType}
+                       <OrganizationTypeDropdown 
+                            organizationType={organizationType}
+                            setOrganizationType={setOrganizationType}
+                            validateField={validateField}
+                            errors={errors}
                         />
-                        {errors.organizationType && <Text className="text-red-500 text-sm mb-3 w-full">{errors.organizationType}</Text>}
-                        
+                                                                            
                         <TextInput
                             ref={legalRepRef}
                             label="Representante Legal"
@@ -641,7 +751,9 @@ export default function Register() {
                         </Text>
                     </TouchableOpacity>
                 </View>
+               
             </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
+      
     );
 }

@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+
 import api from '../utils/axiosInstance';
+import { userVerifity } from '../api/user';
 
 
 export default function VerificationScreen() {
@@ -39,12 +41,14 @@ export default function VerificationScreen() {
             setIsLoading(false);
             return;
         }
-
+        
         try {
-            const response = await api.post('/api/users/verify-account/', {
-                email,
-                code: fullCode
-            });
+            const response = await userVerifity(email, fullCode)
+            
+            // api.post('/api/users/verify-account/', {
+            //     email,
+            //     code: fullCode
+            // });
 
             if (response.status === 200) {
                 Alert.alert('¡Cuenta verificada!', 'Tu cuenta ha sido activada correctamente');
@@ -61,6 +65,7 @@ export default function VerificationScreen() {
         }
     };
 
+    // falat hacer en el backend 
     const handleResendCode = async () => {
         try {
             await api.post('/api/users/verify-account/resend/', { email });

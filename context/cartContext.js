@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCartAPI, addToCartAPI, removeFromCartAPI } from "../api/cart";
+import {  useAuth } from "./authContext";
 
 export const CartContext = createContext();
 
@@ -20,6 +21,22 @@ export const CartProvider = ({ children }) => {
   const [total, setTotal] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const SHIPPING_COST = 5; // Costo fijo de envío
+
+  const {user} = useAuth();
+
+  //cargar cart apenas se inicie la app
+  useEffect(() => {
+    const load = async () => {
+      if (user?.token) {
+        await loadCart();
+      } else {
+        resetCart();
+      }
+    };
+    
+    load();
+  }, [user?.token]);
+
 
   // Calcular totales
   useEffect(() => {

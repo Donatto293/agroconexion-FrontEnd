@@ -17,6 +17,8 @@ import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
 import api from '../../utils/axiosInstance';
 import { getApiErrorMessage } from '../../utils/getApiError';
+import { confirmPasswordReset, requestPasswordReset } from '../../api/user';
+
 
 export default function Login() {
   // Contexto de autenticación
@@ -102,47 +104,44 @@ export default function Login() {
         setIsLoading(true);
 
         try {
-        const response = await api.post('/api/users/login/', {
-            username,
-            password,
-        });
+          setIsLoading(true)
+          const response = await login(username, password)
+          setIsLoading(false)
 
-        // Si la cuenta requiere verificación
-        if (response.data.detail === "Account not verified") {
-            setVerificationEmail(username); // Usar el username como email
-            setVerificationModalVisible(true);
-            return;
-        }
 
-        // Si requiere autenticación en dos pasos
-        if (response.data.detail === "2FA required") {
-            setTwoFASessionToken(response.data.session_token);
-            setTwoFAModalVisible(true);
-            return;
-        }
+          // Si la cuenta requiere verificación
+          if (response.status === 'need_verification') {
+              setVerificationEmail(username); // Usar el username como email
+              setVerificationModalVisible(true);
+              return;
+          }
 
-        // Si todo está bien, proceder con el login
-        const { access, refresh, userName, userImage } = response.data;
-        
-        //se delega al login del Auth
-        await login({ 
-            username: userName, 
-            profile_image: userImage,
-            refresh: refresh,
-            token: access
-        });
+          // Si requiere autenticación en dos pasos
+          if (response.status === 'need_2FA') {
+              setTwoFASessionToken(response.data.session_token);
+              setTwoFAModalVisible(true);
+              return;
+          }
 
-        await Promise.all([loadCart(), fetchFavorites()]);
-        router.replace('/inicio');
-        } catch (error) {
-        console.error('Login error:', error.response?.data || error.message);
-        const errorMsg = error.response?.data?.detail || 
-            'Error al iniciar sesión. Verifica tus credenciales.';
-        
-        setErrors(prev => ({ ...prev, username: errorMsg }));
-        } finally {
-        setIsLoading(false);
-        }
+          if(response.status== 'success'){
+            await Promise.all([loadCart(), fetchFavorites()]);
+            router.replace('/inicio');
+          }else{
+            Alert.alert('No se logro iniciar Sesion')
+          }
+
+
+
+          
+          } catch (error) {
+          console.error('Login error:', error.response?.data || error.message);
+          const errorMsg = error.response?.data?.detail || 
+              'Error al iniciar sesión. Verifica tus credenciales.';
+          
+          setErrors(prev => ({ ...prev, username: errorMsg }));
+          } finally {
+          setIsLoading(false);
+          }
     };
 
     
@@ -202,7 +201,7 @@ export default function Login() {
     }
     setIsLoading(true);
     try {
-      await api.post('/api/users/password-reset/request/', { email: resetEmail });
+      await requestPasswordReset(resetEmail.trim())
       setResetStep('reset');
       Alert.alert('Código enviado', 'Revisa tu correo para el código de verificación');
     } catch (error) {
@@ -228,12 +227,7 @@ export default function Login() {
     } else {
       setIsLoading(true); // <-- corregido (antes tenías setLoading)
       try {
-        await api.post('/api/users/password-reset/confirm/', {
-          email: resetEmail.trim(),
-          code: resetCode.trim(),
-          new_password: newPassword,
-          new_password2 : confirmNewPassword
-        });
+        await confirmPasswordReset(resetEmail.trim(), resetCode.trim(), newPassword, confirmNewPassword)
         Alert.alert('Contraseña cambiada', 'Ahora puedes iniciar sesión con tu nueva contraseña');
         setForgotPasswordModalVisible(false);
         setResetStep('request');
