@@ -22,6 +22,9 @@ export default function PerfilScreen() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
+  //modal para la foto de perfil 
+  const [showModalPicture , setShowModalPicture] = useState(false);
+
   const handleLogout = () => {
     logout();
     router.replace('/login');
@@ -252,11 +255,13 @@ export default function PerfilScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Perfil */}
       <View className="items-center mb-4">
-  <View className="relative">
-    <Image
-      source={{ uri: imageChanged ? formData.profile_image : avatarUri }}
-      className="w-32 h-32 rounded-full bg-gray-200"
-    />
+          <View className="relative">
+      <TouchableOpacity onPress={() => setShowModalPicture(true)}>
+        <Image
+          source={{ uri: imageChanged ? formData.profile_image : avatarUri }}
+          className="w-32 h-32 rounded-full bg-gray-200"
+        />
+      </TouchableOpacity>
 
     {/* small edit floating button */}
     <TouchableOpacity
@@ -382,7 +387,11 @@ export default function PerfilScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* modal */}
+      
+
+      
+    </ScrollView>
+    {/* modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -422,7 +431,29 @@ export default function PerfilScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+
+     { !!showModalPicture && (
+      <Modal
+        visible={!!showModalPicture}   
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowModalPicture(false)}
+      >
+        {/* Fondo que cierra al tocar */}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.modalBackground}
+          onPress={() => setShowModalPicture(false)}
+        >
+          <Image
+            source={{ uri: imageChanged ? formData.profile_image : avatarUri }}
+            style={styles.fullImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
+     )}
+   
     </SafeAreaView>
   );
 }
@@ -466,5 +497,17 @@ const styles = StyleSheet.create({
 
   requireLoginContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loginButton: { marginTop: 12, backgroundColor: '#00732E', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  loginButtonText: { color: '#fff' }
+  loginButtonText: { color: '#fff' },
+
+ 
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
+  },
 });

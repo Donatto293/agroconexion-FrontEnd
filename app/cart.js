@@ -114,7 +114,7 @@ const CartScreen = memo(() => {
             <FlatList
               data={cart}
               keyExtractor={(item) => item?.id?.toString()}
-              contentContainerStyle={{ paddingBottom: 140 }} // 👈 Espacio extra para evitar que el menú tape los botones
+              contentContainerStyle={{ paddingBottom: 20 }} // 👈 Espacio extra para evitar que el menú tape los botones
               renderItem={({ item }) => {
                 const imageUrl = item.product?.images?.[0]?.image
                   ? `${API_URL}${item.product.images[0].image}`

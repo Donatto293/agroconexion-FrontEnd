@@ -5,7 +5,7 @@ let logoutCallback = null;
 let isLoggingOut = false; // evita llamadas duplicadas
 
 const api = axios.create({
-  baseURL: 'http://192.168.20.35:8000',
+  baseURL: 'http://10.3.146.111:8000',
 });
 
 

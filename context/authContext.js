@@ -56,13 +56,18 @@ export function AuthProvider({ children }) {
     
 
     const logout = useCallback(async () => {
-        setUser(null);
-        await AsyncStorage.multiRemove([
-            'accessToken',
-            'refreshToken',
-            'username',
-            'profile_image'
-        ]);
+         setUserFull(null);
+  
+  // Limpiar AsyncStorage
+  await AsyncStorage.multiRemove([
+    'accessToken', 
+    'refreshToken', 
+    'username',
+    'profile_image',
+    'email',
+    'phone_number',
+    'address'
+  ]);
         router.push('/inicio');
     }, []);
 
@@ -91,11 +96,12 @@ export function AuthProvider({ children }) {
         const storedPhone = pairs[4]?.[1] ?? '';
         const storedAddress = pairs[5]?.[1] ?? '';
 
-        if (!accessToken) {
-          // no token -> no sesión
-          setIsLoading(false); // si tienes este flag
-          return;
-        }
+         // 1. Verificación robusta inicial
+    if (!accessToken || accessToken.trim() === '') {
+      console.log('No hay token almacenado');
+      setIsLoading(false);
+      return; // Sale inmediatamente
+    }
 
         try {
           // Llamada al backend para obtener datos completos
