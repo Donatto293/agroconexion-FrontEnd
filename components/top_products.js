@@ -11,7 +11,7 @@ import {
 import useTopProducts from '../api/top_products';
 import { useRouter, Link } from 'expo-router';
 import { SearchContext } from '../context/SearchContext';
-import { useContext } from 'react';
+import { useContext, useRef, useEffect } from 'react';
 import api from '../utils/axiosInstance';
 
 export default function Top_products() {
@@ -26,9 +26,47 @@ export default function Top_products() {
   const IMAGE_HEIGHT = 160;
   const CARD_MARGIN = 12;
 
+  const scrollViewRef = useRef(null);
+
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
+
+  // Core logic for the infinite carousel
+  const duplicates = 2; // Duplicamos los productos para un loop más largo
+  const infiniteProducts = [...filteredProducts];
+  for (let i = 0; i < duplicates; i++) {
+    infiniteProducts.push(...filteredProducts);
+  }
+
+  // Set the initial scroll position to the start of the second set
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (scrollViewRef.current && filteredProducts.length > 0) {
+        const itemWidth = CARD_WIDTH + CARD_MARGIN * 2;
+        const initialPosition = filteredProducts.length * itemWidth;
+        scrollViewRef.current.scrollTo({ x: initialPosition, animated: false });
+      }
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [filteredProducts, CARD_WIDTH, CARD_MARGIN]);
+
+  const handleScroll = (event) => {
+    const { contentOffset } = event.nativeEvent;
+    const itemWidth = CARD_WIDTH + CARD_MARGIN * 2;
+    const contentWidth = filteredProducts.length * itemWidth;
+
+    // Jump back to the beginning of the duplicated items when scrolling to the right end
+    if (contentOffset.x >= contentWidth * duplicates) {
+      const newPosition = contentOffset.x - contentWidth;
+      scrollViewRef.current.scrollTo({ x: newPosition, animated: false });
+    } 
+    // Jump back to the end of the duplicated items when scrolling to the left end
+    else if (contentOffset.x < contentWidth) {
+      const newPosition = contentOffset.x + contentWidth;
+      scrollViewRef.current.scrollTo({ x: newPosition, animated: false });
+    }
+  };
 
   if (loading) return <ActivityIndicator size="large" color="#00732E" />;
   if (error) return (
@@ -39,7 +77,6 @@ export default function Top_products() {
 
   return (
     <View style={styles.container}>
-      {/* Título mejorado y centrado */}
       {filteredProducts.length > 0 && (
         <View style={styles.titleContainer}>
           <Text style={styles.mainTitle}>Productos Más Vendidos</Text>
@@ -51,12 +88,13 @@ export default function Top_products() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
-        decelerationRate="fast"
+        onScroll={handleScroll}
+        ref={scrollViewRef}
+        scrollEventThrottle={16}
       >
-        {filteredProducts.map((product) => (
+        {infiniteProducts.map((product, index) => (
           <View 
-            key={product.id} 
+            key={`${product.id}-${index}`}
             style={[styles.cardWrapper, { width: CARD_WIDTH, marginHorizontal: CARD_MARGIN }]}
           >
             <Link href={`/${product.id}`} asChild>
@@ -91,10 +129,7 @@ export default function Top_products() {
                       {product.description}
                     </Text>
                     <View style={styles.priceContainer}>
-                      <Text style={styles.productPrice}>${product.price}</Text>
-                      <Text style={styles.productMeasure}>
-                        {product.unit_of_measure}
-                      </Text>
+                      <Text style={styles.productPrice}>${product.price} /{product.unit_of_measure}</Text>
                     </View>
                   </View>
                 </View>
@@ -109,7 +144,7 @@ export default function Top_products() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 30,
+    paddingVertical: 5,
     backgroundColor: '#F9FAFB',
   },
   titleContainer: {
@@ -131,17 +166,17 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   scrollContent: {
-    paddingVertical: 10,
-    paddingLeft: 10,
+    paddingVertical: -10,
+    paddingLeft: '8%',
     alignItems: 'flex-start',
   },
   cardWrapper: {
-    borderRadius: 16,
+    borderRadius: 30,
     overflow: 'hidden',
   },
   productCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 30,
     overflow: 'hidden',
     elevation: 3,
     shadowColor: '#000',
@@ -149,26 +184,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     width: '100%',
-  },
-  scrollContent: {
-    paddingVertical: 20,
-    paddingLeft: 30, // Margen inicial
-    alignItems: 'flex-start', // Alinea todas las cards igual
-  },
-  cardWrapper: {
-    borderRadius: 16,
-    overflow: 'hidden', // Para que los bordes redondeados funcionen
-  },
-  productCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    width: '100%', // Toma el ancho del contenedor padre
   },
   cardPressed: {
     transform: [{ scale: 0.98 }],
@@ -214,7 +229,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     padding: 20,
-    height: 140, // Altura fija para el área de texto (320 total - 160 imagen - 16 padding)
+    height: 140,
     justifyContent: 'space-between',
   },
   productTitle: {
@@ -254,6 +269,4 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontSize: 16,
   },
-  
 });
- 

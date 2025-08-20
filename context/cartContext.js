@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCartAPI, addToCartAPI, removeFromCartAPI } from "../api/cart";
+import { useAuth } from "./authContext";
+import { Alert } from "react-native";
 
 export const CartContext = createContext();
 
@@ -14,87 +16,143 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
-  const [subtotal, setSubtotal] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [shippingDiscount, setShippingDiscount] = useState(0);
-  const [total, setTotal] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const SHIPPING_COST = 5; // Costo fijo de envío
 
-  // Calcular totales
+  const { user } = useAuth();
+
   useEffect(() => {
-    const newSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    setSubtotal(newSubtotal);
-
-    let productDiscount = 0;
-    let newShippingDiscount = 0;
-
-    if (appliedCoupon) {
-      if (appliedCoupon.type === 'percentage') {
-        productDiscount = newSubtotal * (appliedCoupon.discount / 100);
-      } else if (appliedCoupon.type === 'fixed') {
-        productDiscount = appliedCoupon.discount;
-      }
-
-      if (appliedCoupon.freeShipping) {
-        newShippingDiscount = SHIPPING_COST;
-      }
+    if (user?.token) {
+      loadCart();
+    } else {
+      setCart([]);
     }
+  }, [user?.token]);
 
-    setDiscount(productDiscount);
-    setShippingDiscount(newShippingDiscount);
-    setTotal(Math.max(0, newSubtotal - productDiscount + SHIPPING_COST - newShippingDiscount));
-  }, [cart, appliedCoupon]);
-
-  // Cargar carrito del servidor
   const loadCart = async () => {
     const token = await AsyncStorage.getItem("accessToken");
-    if (!token) {
-      console.warn("No token disponible para cargar el carrito");
-      return;
-    }
+    if (!token) return;
     try {
       const data = await getCartAPI(token);
-      setCart(data.products);
+      const itemsWithSelection = data.products.map(item => ({
+        ...item,
+        selected: true,
+      }));
+      setCart(itemsWithSelection);
     } catch (err) {
       console.error("Error cargando carrito:", err);
     }
   };
 
-  // Aplicar cupón
+  const toggleProductSelection = useCallback((productId) => {
+    setCart(currentCart =>
+      currentCart.map(item =>
+        item.product.id === productId ? { ...item, selected: !item.selected } : item
+      )
+    );
+  }, []);
+
+  const areAllSelected = useMemo(() => cart.length > 0 && cart.every(item => item.selected), [cart]);
+
+  const toggleSelectAll = useCallback(() => {
+    const nextState = !areAllSelected;
+    setCart(currentCart => currentCart.map(item => ({ ...item, selected: nextState })));
+  }, [areAllSelected]);
+
+  const increaseQuantity = useCallback(async (productId) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    if (!token) return;
+    try {
+      await addToCartAPI(productId, 1, token);
+      await loadCart();
+    } catch (err) {
+      console.error("Error al aumentar la cantidad:", err.response?.data || err);
+    }
+  }, []);
+
+  const decreaseQuantity = useCallback(async (productId) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    if (!token) return;
+    
+    const item = cart.find(i => i.product.id === productId);
+    if (item && item.quantity > 1) {
+      try {
+        await addToCartAPI(productId, -1, token);
+        await loadCart();
+      } catch (err) {
+        console.error("Error al disminuir la cantidad:", err.response?.data || err);
+      }
+    } else {
+      await removeFromCart(productId);
+    }
+  }, [cart]);
+
+  // *** FUNCIÓN CLAVE AÑADIDA PARA SOLUCIONAR EL PROBLEMA ***
+  const updateQuantity = useCallback(async (productId, newQuantity) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    if (!token) return;
+
+    const item = cart.find(i => i.product.id === productId);
+    const stock = item?.product?.stock ?? 0;
+
+    let finalQuantity = parseInt(newQuantity, 10);
+
+    if (isNaN(finalQuantity) || finalQuantity < 1) {
+      finalQuantity = 1;
+    } else if (finalQuantity > stock) {
+      finalQuantity = stock;
+    }
+
+    if (finalQuantity !== item.quantity) {
+      try {
+        await addToCartAPI(productId, finalQuantity - item.quantity, token);
+        await loadCart();
+      } catch (err) {
+        Alert.alert("Error", err.response?.data.detail || "Error al actualizar la cantidad");
+        console.error("Error al actualizar la cantidad:", err);
+      }
+    }
+  }, [cart]);
+
+  const { subtotal, discount, shippingDiscount, total, selectedItemsCount } = useMemo(() => {
+    const selectedItems = cart.filter(item => item.selected);
+    const newSubtotal = selectedItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
+    let productDiscount = 0;
+    let newShippingDiscount = 0;
+
+    if (appliedCoupon && newSubtotal >= appliedCoupon.minPurchase) {
+      if (appliedCoupon.type === 'percentage') {
+        productDiscount = newSubtotal * (appliedCoupon.discount / 100);
+      } else if (appliedCoupon.type === 'fixed') {
+        productDiscount = appliedCoupon.discount;
+      }
+      if (appliedCoupon.freeShipping) {
+        newShippingDiscount = SHIPPING_COST;
+      }
+    }
+    
+    const finalTotal = Math.max(0, newSubtotal - productDiscount + SHIPPING_COST - newShippingDiscount);
+
+    return {
+      subtotal: newSubtotal,
+      discount: productDiscount,
+      shippingDiscount: newShippingDiscount,
+      total: finalTotal,
+      selectedItemsCount: selectedItems.length,
+    };
+  }, [cart, appliedCoupon]);
+
   const applyCoupon = (coupon) => {
     if (subtotal >= coupon.minPurchase) {
-      setAppliedCoupon({
-        id: coupon.id,
-        code: coupon.code,
-        discount: coupon.discount || 0,
-        type: coupon.discount > 0 ? 'percentage' : 'fixed',
-        minPurchase: coupon.minPurchase,
-        freeShipping: coupon.freeShipping || false
-      });
+      setAppliedCoupon(coupon);
       return true;
     }
     return false;
   };
 
-  // Remover cupón
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-  };
+  const removeCoupon = () => setAppliedCoupon(null);
 
-  // Agregar producto al carrito (MODIFICADO)
-  const addToCart = async (product) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    try {
-      // Usamos product.quantity en lugar de 1
-      await addToCartAPI(product.id, product.quantity || 1, token);
-      await loadCart();
-    } catch (err) {
-      console.error("Error al agregar al carrito:", err.response?.data || err);
-    }
-  };
-
-  // Eliminar producto del carrito
   const removeFromCart = async (productId) => {
     const token = await AsyncStorage.getItem("accessToken");
     if (!token) return;
@@ -102,25 +160,23 @@ export const CartProvider = ({ children }) => {
       await removeFromCartAPI(productId, token);
       await loadCart();
     } catch (err) {
-      console.error("Error al eliminar del carrito:", err.response?.data || err);
+      console.error("Error al eliminar del carrito:", err);
     }
   };
 
-  // Vaciar carrito
   const clearCart = async () => {
+    const token = await AsyncStorage.getItem("accessToken");
+    if (!token) return;
     try {
-      const token = await AsyncStorage.getItem("accessToken");
       await Promise.all(
         cart.map(item => removeFromCartAPI(item.product.id, token))
       );
       await loadCart();
       removeCoupon();
     } catch (err) {
-      console.error("Error al vaciar carrito:", err.response?.data || err.message);
+      console.error("Error al vaciar carrito:", err);
     }
   };
-
-  const resetCart = () => setCart([]);
 
   const contextValue = useMemo(() => ({
     cart,
@@ -130,26 +186,27 @@ export const CartProvider = ({ children }) => {
     shippingCost: SHIPPING_COST,
     total,
     appliedCoupon,
+    areAllSelected,
+    selectedItemsCount,
     loadCart,
-    addToCart,
+    addToCart: async (product, quantity) => {
+      const token = await AsyncStorage.getItem("accessToken");
+      await addToCartAPI(product.id, quantity, token);
+      await loadCart();
+    },
     removeFromCart,
     clearCart,
     applyCoupon,
     removeCoupon,
+    toggleProductSelection,
+    toggleSelectAll,
+    increaseQuantity,
+    decreaseQuantity,
+    updateQuantity, // Asegúrate de exportar la nueva función
     resetCart: () => setCart([])
   }), [
-    cart,
-    subtotal,
-    discount,
-    shippingDiscount,
-    total,
-    appliedCoupon,
-    loadCart,
-    addToCart,
-    removeFromCart,
-    clearCart,
-    applyCoupon,
-    removeCoupon
+    cart, subtotal, discount, shippingDiscount, total, appliedCoupon, areAllSelected, selectedItemsCount,
+    toggleProductSelection, toggleSelectAll, increaseQuantity, decreaseQuantity, removeFromCart, clearCart, updateQuantity
   ]);
 
   return (

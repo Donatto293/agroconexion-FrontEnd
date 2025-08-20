@@ -136,7 +136,8 @@ export default function CategoryProductsScreen() {
 
               <View style={styles.infoContainer}>
                 <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.price}>${item.price}</Text>
+                <Text style={styles.price}>${item.price}/ {item.unit_of_measure}</Text>
+                
                 {item.description && (
                   <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
                 )}
