@@ -2,17 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useState, useContext, useCallback, useEffect, useMemo } from 'react';
 import { setLogoutHandler } from '../utils/axiosInstance';
 import { useRouter } from 'expo-router';
-import { userLogin, userInfo, userUpdate } from '../api/user';
+import { userLogin, userInfo, userUpdate, refreshTokenAPI } from '../api/user';
 import { ActivityIndicator } from 'react-native-paper';
 
 
 export const AuthContext = createContext();
 
 //para la imagen 
-const pickImageField = (obj) => {
-  if (!obj) return null;
-  return obj.profile_image || obj.avatar || obj.userImage || obj.image || null;
-};
+// const pickImageField = (obj) => {
+//   if (!obj) return null;
+//   return obj.profile_image || obj.avatar || obj.userImage || obj.image || null;
+// };
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
@@ -23,11 +23,7 @@ export function AuthProvider({ children }) {
 
     const router = useRouter();
 
-    // Invocación única al montar
-    useEffect(() => {
-        loadSession().finally(() => setIsLoading(false));
-    }, [loadSession]);
-    
+   
 
     const login = useCallback(async (username, password) => {
     
@@ -36,8 +32,25 @@ export function AuthProvider({ children }) {
 
         if (response.data.detail === "Account not verified") return { status: 'need_verification' };
         if (response.data.detail === "2FA required") return { status: 'need_2FA', sessionToken: response.data.session_token };
-       
-         //  Guardar tokens y datos mínimos en AsyncStorage
+        
+         // Caso : 2FA requerido (nuevo formato)
+        if (response.data.message && response.data.message.includes("Código enviado a tu correo")) {
+          return { 
+            status: 'need_2FA', 
+            email: response.data.email,
+            sessionToken: response.data.session_token // Si está disponible
+          };
+        }
+        
+        // Caso : 2FA requerido (formato antiguo)
+        if (response.data.detail === "2FA required") {
+          return { 
+            status: 'need_2FA', 
+            email: username, // Asumimos que username es el email
+            sessionToken: response.data.session_token 
+          };
+        }
+              //  Guardar tokens y datos mínimos en AsyncStorage
         await AsyncStorage.multiSet([
           ['accessToken', response.data.access],
           ['refreshToken', response.data.refresh],
@@ -45,133 +58,159 @@ export function AuthProvider({ children }) {
           ['profile_image', response.data.userImage || ''],
           ['email', response.data.userEmail || '']
         ]);
-        loadSession()
+        // esperar a que loadSession termine para evitar condiciones de carrera
+        await loadSession()
         return { status: 'success' };
     } catch (error) {
         return { status: 'error', message: error.response?.data?.detail || 'Error al iniciar sesión' };
     }
-}, []);
+  }, []);
+
+
+  //refres Token 
+  const refreshAccessToken = useCallback(async () => {
+    try {
+    
+      const refresh_Token = await AsyncStorage.getItem('refreshToken');
+      if (!refresh_Token) {
+      // En lugar de throw, llama a logout directamente
+        if (logout) await logout();
+        throw new Error('No refresh token available');
+      }
+      const response = await refreshTokenAPI(refresh_Token )
+      const newAccessToken = response.data.access;
+      
+      await AsyncStorage.setItem('accessToken', newAccessToken);
+      return newAccessToken;
+
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      await logout();
+      throw error;
+    }
+  }, []);
 
 
     
 
     const logout = useCallback(async () => {
-         setUserFull(null);
+
+      setUser(null);
+      setUserFull(null);
   
-  // Limpiar AsyncStorage
-  await AsyncStorage.multiRemove([
-    'accessToken', 
-    'refreshToken', 
-    'username',
-    'profile_image',
-    'email',
-    'phone_number',
-    'address'
-  ]);
-        router.push('/inicio');
-    }, []);
+    // Limpiar AsyncStorage
+    await AsyncStorage.multiRemove([
+      'accessToken', 
+      'refreshToken', 
+      'username',
+      'profile_image',
+      'email',
+      'phone_number',
+      'address',
+      'two_factor_enable'
+    ]);
+          router.push('/inicio');
+      }, []);
 
     useEffect(() => {
         setLogoutHandler(logout);
     }, [logout]);
 
-    // Función para cargar la sesión al iniciar la app
-    const loadSession = useCallback(async () => {
+  // Función para cargar la sesión al iniciar la app
+  const loadSession = useCallback(async () => {
+
+    try {
+      // Leer valores guardados
+      const pairs = await AsyncStorage.multiGet([
+        'accessToken',
+        'refreshToken',
+        'username',
+        'profile_image',
+        'email',
+        'phone_number',
+        'address',
+        'two_factor_enable'
+      ]);
+
+      const accessToken = pairs[0]?.[1];
+      const refreshToken = pairs[1]?.[1];
+      const storedUsername = pairs[2]?.[1] ?? '';
+      const storedProfile = pairs[3]?.[1] ?? '';
+      const storedEmail = pairs[4]?.[1] ?? '';
+      const storedPhone = pairs[5]?.[1] ?? '';
+      const storedAddress = pairs[6]?.[1] ?? '';
+      const storedTwoFactor = pairs[7]?.[1] === 'false'; 
+
+        // 1. Verificación robusta inicial
+      if (!accessToken || accessToken.trim() === '') {
+        console.log('No hay token almacenado');
+        setIsLoading(false);
+        return; // Sale inmediatamente
+      }
+      
 
       try {
-        // Leer valores guardados
-        const pairs = await AsyncStorage.multiGet([
-          'accessToken',
-          'username',
-          'profile_image',
-          'email',
-          'phone_number',
-          'address'
-        ]);
+        // Llamada al backend para obtener datos completos
+        const info = await userInfo(accessToken); // espera que retorne objeto con fields
 
-        const accessToken = pairs[0]?.[1];
-        const storedUsername = pairs[1]?.[1] ?? '';
-        const storedProfile = pairs[2]?.[1] ?? '';
-        const storedEmail = pairs[3]?.[1] ?? '';
-        const storedPhone = pairs[4]?.[1] ?? '';
-        const storedAddress = pairs[5]?.[1] ?? '';
+        // Construir objetos user y userFull
+        const minimalUser = {
+          token: accessToken,
+          username: info.username || storedUsername || '',
+          profile_image: info.profile_image || storedProfile || null
+        };
 
-         // 1. Verificación robusta inicial
-    if (!accessToken || accessToken.trim() === '') {
-      console.log('No hay token almacenado');
-      setIsLoading(false);
-      return; // Sale inmediatamente
-    }
+        const fullUser = {
+          token: accessToken,
+          id: info.id ?? null,
+          username: info.username ?? storedUsername ?? '',
+          email: info.email ?? storedEmail ?? '',
+          phone_number: info.phone_number ?? storedPhone ?? '',
+          address: info.address ?? storedAddress ?? '',
+          profile_image: info.profile_image ?? storedProfile ?? null,
+          user_type: info.user_type ?? 'common',
+          is_buyer: info.is_buyer ?? true,
+          is_seller: info.is_seller ?? false,
+          group_profile: info.group_profile ?? null,
+          two_factor_enable: info.two_factor_enable ??  storedTwoFactor ?? false
+        };
 
-        try {
-          // Llamada al backend para obtener datos completos
-          const info = await userInfo(accessToken); // espera que retorne objeto con fields
+        // Setear estados
+        setUser(minimalUser);
+        setUserFull(fullUser);
 
-          // Construir objetos user y userFull
-          const minimalUser = {
-            token: accessToken,
-            username: info.username || storedUsername || '',
-            profile_image: info.profile_image || storedProfile || null
-          };
+        // Guardar en AsyncStorage solo los campos que usas localmente
+        const storageUpdates = [
+          ['username', fullUser.username || ''],
+          ['profile_image', fullUser.profile_image || ''],
+          ['email', fullUser.email || ''],
+          ['phone_number', fullUser.phone_number || ''],
+          ['address', fullUser.address || ''],
+          ['two_factor_enable', String(fullUser.two_factor_enable)]
+        ];
+        await AsyncStorage.multiSet(storageUpdates);
 
-          const fullUser = {
-            token: accessToken,
-            id: info.id ?? null,
-            username: info.username ?? storedUsername ?? '',
-            email: info.email ?? storedEmail ?? '',
-            phone_number: info.phone_number ?? storedPhone ?? '',
-            address: info.address ?? storedAddress ?? '',
-            profile_image: info.profile_image ?? storedProfile ?? null,
-            user_type: info.user_type ?? 'common',
-            is_buyer: info.is_buyer ?? true,
-            is_seller: info.is_seller ?? false,
-            group_profile: info.group_profile ?? null
-          };
+        
+        console.log('Sesión cargada y actualizada desde API');
+      } catch (err) {
+        const status = err?.response?.status;
+        console.error('Error al obtener userInfo:', err?.response?.data ?? err.message);
 
-          // Setear estados
-          setUser(minimalUser);
-          setUserFull(fullUser);
-
-          // Guardar en AsyncStorage solo los campos que usas localmente
-          const storageUpdates = [
-            ['username', fullUser.username || ''],
-            ['profile_image', fullUser.profile_image || ''],
-            ['email', fullUser.email || ''],
-            ['phone_number', fullUser.phone_number || ''],
-            ['address', fullUser.address || '']
-          ];
-          await AsyncStorage.multiSet(storageUpdates);
-
-          console.log('Sesión cargada y actualizada desde API');
-        } catch (err) {
-          const status = err?.response?.status;
-          console.error('Error al obtener userInfo:', err?.response?.data ?? err.message);
-
-          if (status === 401 || status === 403) {
-            // Token inválido/expirado: intenta refrescar si tienes refresh logic
-            // Si no tienes refresh, haz logout para limpiar estado
-            // await tryRefreshOrLogout(); // opcional
-            logout();
-          } else {
-            // Error temporal: no forzar logout; usar datos locales como fallback
-            console.warn('Error temporal al obtener userInfo — usando datos locales si existen');
-            setUser({
-              token: accessToken,
-              username: storedUsername,
-              profile_image: storedProfile || null
-            });
-            setUserFull({
-              token: accessToken,
-              id: null,
-              username: storedUsername,
-              email: storedEmail,
-              phone_number: storedPhone,
-              address: storedAddress,
-              profile_image: storedProfile || null,
-              user_type: 'common'
-            });
-          }
+        if (status === 401 || status === 403) {
+          // Token inválido/expirado: intenta refrescar si tienes refresh logic
+          // Si no tienes refresh, haz logout para limpiar estado
+          await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+          logout();
+          setUser(null);
+          setUserFull(null);
+        } else {
+          // Error temporal: no forzar logout; usar datos locales como fallback
+          console.warn('Error temporal al obtener userInfo — limpiando datos');
+          setUser(null);
+          setUserFull(null);
         }
+      }
+      
     } catch (error) {
       console.error('Error al cargar sesión:', error);
     } finally {
@@ -196,18 +235,23 @@ export function AuthProvider({ children }) {
       
       
       // updateProfile: recibe FormData (multipart) y centraliza la actualización
-  const updateProfile = useCallback(async (formData) => {
+    const updateProfile = useCallback(async (formData) => {
       try {
         const data = await userUpdate(formData); // llama al servicio que retorna response.data
-        loadSession()
+        
+       
         // data debería contener campos actualizados del usuario (username, email, profile_image, etc.)
-        setUser(prev => {
-          const updated = {
-            ...prev,
-            ...data
-          };
-          return updated;
-        });
+         // Actualizar estado inmediatamente
+        setUser(prev => ({
+          ...prev,
+          username: data.username || prev.username,
+          profile_image: data.profile_image || prev.profile_image
+        }));
+        
+        setUserFull(prev => ({
+          ...prev,
+          ...data
+        }));
 
         // Guardar en AsyncStorage sólo los campos relevantes (normaliza keys)
         const keys = [];
@@ -216,8 +260,11 @@ export function AuthProvider({ children }) {
         if (data.email !== undefined) keys.push(['email', String(data.email)]);
         if (data.phone_number !== undefined) keys.push(['phone_number', String(data.phone_number)]);
         if (data.address !== undefined) keys.push(['address', String(data.address)]);
+        if (data.two_factor_enable !== undefined) keys.push(['two_factor_enable', String(data.two_factor_enable ? 1 : 0)]);
         if (keys.length > 0) await AsyncStorage.multiSet(keys);
-
+        
+        // Llamar loadSession para asegurar consistencia
+        await loadSession();
         
         return { status: 'success', data };
         
@@ -239,6 +286,13 @@ export function AuthProvider({ children }) {
         return { status: 'error', message };
       }
     }, []);
+
+
+     // Invocación única al montar
+    useEffect(() => {
+        loadSession().finally(() => setIsLoading(false));
+    }, [loadSession]);
+    
 
     // Memorizar los valores del contexto
     const contextValue = useMemo(() => ({

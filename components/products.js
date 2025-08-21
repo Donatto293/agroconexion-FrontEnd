@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import useProducts from '../api/products';
+import {useProductsContext} from '../context/productContext';
 import { useRouter, Link } from 'expo-router';
 import { SearchContext } from '../context/SearchContext';
 import { useContext } from 'react';
@@ -16,8 +16,9 @@ import api from '../utils/axiosInstance';
 export default function Products() {
   const API_URL = api.defaults.baseURL;
   const router = useRouter();
-  const { products, loading, error } = useProducts();
+  const { products, loading, error } = useProductsContext();
   const { searchQuery } = useContext(SearchContext);
+  console.log(products)
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase().trim())

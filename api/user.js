@@ -19,6 +19,22 @@ export const userInfo = async (token) => {
   
 };
 
+//refrest Token 
+
+export const refreshTokenAPI = async (refreshTokenValue) => {
+  try {
+    const response = await axios.post(`${URL}/api/token/refresh/`, {
+      refresh: refreshTokenValue
+     
+    });
+    return response;
+  } catch (error) {
+    console.error('API call error en refreshTokenAPI :', error);
+    throw error;
+  }
+};
+
+
 export const userUpdate= async (form)=>{
 
     try {
@@ -32,7 +48,17 @@ export const userUpdate= async (form)=>{
                 },
                 body: form
                 });
-        return response
+        // Si devuelve error, intenta parsear cuerpo y lanzar mensaje útil
+        if (!response.ok) {
+        const errJson = await response.json().catch(() => null);
+        const msg = errJson?.detail || `Error en actualización (${response.status})`;
+        const e = new Error(msg);
+        e._server = errJson;
+        throw e;
+        }
+
+        // **devuelve el JSON** ya parseado
+        return await response.json();
     } catch (error) {
         console.error('API call error en UserUpdate:', error);
         throw error;
@@ -74,6 +100,18 @@ export const userLogin = async(username, password)=> {
    }
    
 }
+
+//autentificacion 2 pasos
+export const loginStep2 = async (email, code) => {
+  try {
+    const response = await api.post(`${API_URL}login/step2/`, { email, code });
+    return response;
+  } catch (error) {
+    console.error('API call error en el login2:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
 
 
 //verificar User
@@ -177,4 +215,21 @@ export const confirmPasswordChange = async(code, newPassword)=>{
         };
     }
 
+}
+
+
+export const userToggle2fa = async (enable)=>{
+  try {
+    const token = await AsyncStorage.getItem('accessToken')
+    const response = await api.post(`${API_URL}toggle-2fa/`,{
+      enable
+    },{headers: {
+                    Authorization: `Bearer ${token}`,
+                } }
+  )
+  return response
+  } catch (error) {
+    console.error('API error en toggle2fa:', error.response?.data || error.message);
+      throw error;
+  }
 }

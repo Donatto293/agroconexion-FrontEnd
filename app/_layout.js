@@ -15,6 +15,7 @@ import { SearchProvider } from "../context/SearchContext";
 import { MenuProvider , MenuContext } from "../context/menuContext";
 import { CartProvider } from "../context/cartContext";
 import { MENU_HEIGHT } from "../context/menuContext";
+import { ProductProvider } from "../context/productContext";
 
 function AppWithStack() {
   const insets = useSafeAreaInsets();
@@ -48,20 +49,22 @@ export default function Layout(){
       <PaperProvider>
 
         <AuthProvider>
-          <MenuProvider>
-            <SearchProvider>
-            <CartProvider>
-              <FavoritesProvider>
-                
+          <ProductProvider>
+            <MenuProvider>
+              <SearchProvider>
+              <CartProvider>
+                <FavoritesProvider>
                   
-                    <AppWithStack />
-                     
+                    
+                      <AppWithStack />
+                      
+                    
                   
-                
-              </FavoritesProvider>
-            </CartProvider>
-          </SearchProvider>
-        </MenuProvider>
+                </FavoritesProvider>
+              </CartProvider>
+            </SearchProvider>
+          </MenuProvider>
+         </ProductProvider> 
       </AuthProvider>
     </PaperProvider>
   </SafeAreaProvider>

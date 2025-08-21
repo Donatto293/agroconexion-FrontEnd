@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, ActivityIndicator, Alert,Modal, Animated, Easing, TouchableWithoutFeedback , AsyncStorage} from 'react-native';
 import { useAuth } from '../../context/authContext';
 import { useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { userToggle2fa } from '../../api/user';
+import { Snackbar } from 'react-native-paper';
+
 
 export default function PrivacidadScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, userFull } = useAuth();
   const router = useRouter();
+
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => {
+  // inicializa desde userFull si existe
+  return userFull?.two_factor_enabled ?? userFull?.two_factor_enable ?? false;
+});
+  const [loading2FA, setLoading2FA] = useState(false);
   
   // Estados para los switches
   const [isEnabled, setIsEnabled] = useState({
@@ -15,8 +24,53 @@ export default function PrivacidadScreen() {
     dataCollection: false,
     marketingEmails: false
   });
-  
   const [biometricEnabled, setBiometricEnabled] = useState(true);
+
+
+  //modal de autentificacion 
+    // --- Modal local (mensaje pequeño) ---
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState('success'); // 'success' | 'error'
+  const autoDismissMs = 1300;
+
+  // small animation for modal card
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(-50)).current;
+
+  useEffect(() => {
+    if (modalVisible) {
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+        Animated.timing(translateY, { toValue: 0, duration: 200, useNativeDriver: true, easing: Easing.out(Easing.cubic) })
+      ]).start();
+
+      const t = setTimeout(() => {
+        closeModal();
+      }, autoDismissMs);
+      return () => clearTimeout(t);
+    } else {
+      opacity.setValue(0);
+      translateY.setValue(-50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalVisible]);
+
+  const showModal = (message, type = 'success') => {
+    setModalMessage(message);
+    setModalType(type);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    // animate out and then hide
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 8, duration: 160, useNativeDriver: true })
+    ]).start(() => {
+      setModalVisible(false);
+    });
+  };
 
   const toggleSwitch = (key) => {
     setIsEnabled(prev => ({
@@ -25,14 +79,27 @@ export default function PrivacidadScreen() {
     }));
   };
 
-  const handleChangePassword = () => {
-    router.push('/cambiar-password');
-  };
+ 
+  const handleTwoFactorAuth = async () => {
+     try {
+        const newState = !twoFactorEnabled; // si estaba en true lo desactiva y viceversa
+        const result = await userToggle2fa(newState);
 
-  const handleTwoFactorAuth = () => {
-    router.push('/autenticacion-dos-factores');
-  };
+       
+        const msg = result.data.message ?? 'Estado de autentificacion actualizado';
+        setTwoFactorEnabled(newState); // actualizar estado local
+        // Actualizar AsyncStorage (mantener ambas claves por compatibilidad)
+      showModal(msg, 'success');
+      await AsyncStorage.setItem('two_factor_enabled', String(newState));
+      
+      
 
+    } catch (error) {
+        Alert.alert('Error', 'No se pudo actualizar el 2FA.', error);
+    } finally {
+        setLoading2FA(false);
+    }
+  };
   const handleDownloadData = async () => {
     // Lógica para descargar datos del usuario
     alert('Se ha enviado un enlace a tu correo para descargar tus datos');
@@ -43,6 +110,7 @@ export default function PrivacidadScreen() {
   };
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Privacidad y Seguridad</Text>
       
@@ -50,22 +118,18 @@ export default function PrivacidadScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🔒 Seguridad</Text>
         
-        <TouchableOpacity style={styles.option} onPress={handleChangePassword}>
-          <View style={styles.optionLeft}>
-            <Icon name="lock" size={24} color="#00732E" />
-            <Text style={styles.optionText}>Cambiar contraseña</Text>
-          </View>
-          <Icon name="chevron-right" size={24} color="#9CA3AF" />
-        </TouchableOpacity>
+       
         
-        <TouchableOpacity style={styles.option} onPress={handleTwoFactorAuth}>
+        <TouchableOpacity style={styles.option} onPress={handleTwoFactorAuth} disabled={loading2FA}>
           <View style={styles.optionLeft}>
             <Icon name="security" size={24} color="#00732E" />
-            <Text style={styles.optionText}>Autenticación de dos factores</Text>
-          </View>
-          <View style={styles.optionRight}>
-            <Text style={styles.optionStatus}>Activado</Text>
-            <Icon name="chevron-right" size={24} color="#9CA3AF" />
+            {loading2FA ? (
+              <ActivityIndicator size="small" color="#00732E" style={{ marginLeft: 8 }} />
+            ) : (
+              <Text style={styles.optionText}>
+                {twoFactorEnabled ? "Desactivar autentificacion de 2 pasos" : "Activar autentificacion de 2 pasos"}
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
         
@@ -183,6 +247,45 @@ export default function PrivacidadScreen() {
       
       <Text style={styles.versionText}>Versión 1.0.0</Text>
     </ScrollView>
+     {/* Modal con nuevo diseño y posicionamiento */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeModal}
+        statusBarTranslucent
+      >
+        <View style={styles.modalContainer}>
+          <Animated.View 
+            style={[
+              styles.modalContent,
+              {
+                opacity: opacity,
+                transform: [{ translateY: translateY }]
+              }
+            ]}
+          >
+            <View style={[
+              styles.modalIcon,
+              modalType === 'error' ? styles.modalIconError : styles.modalIconSuccess
+            ]}>
+              <Icon
+                name={modalType === 'error' ? 'error-outline' : 'check-circle'}
+                size={32}
+                color="#FFF"
+              />
+            </View>
+            <Text style={styles.modalText}>{modalMessage}</Text>
+            <TouchableOpacity 
+              onPress={closeModal} 
+              style={styles.modalButton}
+            >
+              <Text style={styles.modalButtonText}>Aceptar</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -249,5 +352,52 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#9CA3AF',
     marginTop: 16,
+  },
+ // Estilos del modal
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalIconSuccess: {
+    backgroundColor: '#00732E',
+  },
+  modalIconError: {
+    backgroundColor: '#DC2626',
+  },
+  modalText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    color: '#1F2937',
+  },
+  modalButton: {
+    backgroundColor: '#00732E',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

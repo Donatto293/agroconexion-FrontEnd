@@ -4,14 +4,9 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Dimensions,
   StyleSheet,
   PanResponder,
-  ScrollView,
-  LayoutAnimation,
-  Platform,
-  UIManager
 } from 'react-native';
 import {
   IconShoppingCart,
@@ -26,9 +21,13 @@ import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
 import { useAuth } from '../../context/authContext';
 import { useMenu } from '../../context/menuContext';
+import MenuDespegableModal from './Menu_despegable';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
+const MENU_ITEM_WIDTH = SCREEN_WIDTH / 5;
+const MENU_PADDING = 10;
+const MENU_HEIGHT = 70;
+const CENTER_BUTTON_OFFSET = 40;
 
 export default function Menu() {
   const { user } = useAuth();
@@ -38,31 +37,11 @@ export default function Menu() {
   const router = useRouter();
 
   const pan = useRef(new Animated.ValueXY()).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const username = user?.username;
-
   const [activeRoute, setActiveRoute] = useState('inicio');
 
   const handleNavigate = (route) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveRoute(route.replace('/', ''));
     router.push(route);
-  };
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
   };
 
   const panResponder = useRef(
@@ -91,111 +70,67 @@ export default function Menu() {
     router.push(user ? '/cart' : '/login');
   };
 
+  const isAuthenticated = !!user;
+
   return (
     <>
       <View style={styles.menuContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.bottomMenu}
-          contentContainerStyle={styles.menuContent}
-        >
-          {/* Favoritos */}
-          <TouchableOpacity
-            style={[
-              styles.menuItem,
-              activeRoute === 'favorites' && styles.activeItemBackground
-            ]}
-            onPress={() => handleNavigate(username ? '/favorites' : '/login')}
-          >
-            <IconFavorites size={24} color={activeRoute === 'favorites' ? '#00732E' : '#999'} />
-            {favorites.length > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{favorites.length}</Text>
-              </View>
-            )}
-            <Text style={[
-              styles.menuLabel,
-              activeRoute === 'favorites' && styles.activeLabel
-            ]}>
-              Favoritos
-            </Text>
-          </TouchableOpacity>
-
-          {/* Categorías */}
-          <TouchableOpacity
-            style={[
-              styles.menuItem,
-              activeRoute === 'categorias' && styles.activeItemBackground
-            ]}
-            onPress={() => handleNavigate('/categorias')}
-          >
-            <IconCategories size={24} color={activeRoute === 'categorias' ? '#00732E' : '#999'} />
-            <Text style={[
-              styles.menuLabel,
-              activeRoute === 'categorias' && styles.activeLabel
-            ]}>
-              Categorías
-            </Text>
-          </TouchableOpacity>
-
-          {/* Inicio */}
-          <TouchableWithoutFeedback
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            onPress={() => handleNavigate('/inicio')}
-          >
-            <Animated.View
-              style={[
-                styles.menuItem,
-                styles.centerItem,
-                { transform: [{ scale: scaleAnim }] },
-              ]}
+        <View style={styles.menuContent}>
+          {/* Sección izquierda - AHORA CON FAVORITOS PRIMERO */}
+          <View style={styles.menuSection}>
+            <MenuItem 
+              icon={<IconFavorites size={22} color={activeRoute === 'favorites' ? '#00732E' : '#666'} />}
+              label="Favoritos"
+              isActive={activeRoute === 'favorites'}
+              onPress={() => handleNavigate(isAuthenticated ? '/favorites' : '/login')}
+              badgeCount={favorites.length}
+            />
+            
+            <MenuDespegableModal onOpen={() => setActiveRoute('menu')}>
+              <MenuItem 
+                icon={<IconCategories size={22} color={activeRoute === 'menu' ? '#00732E' : '#666'} />}
+                label="Menú"
+                isActive={activeRoute === 'menu'}
+                // no necesitas pasar onPress porque se inyecta desde MenuDespegableModal
+              />
+            </MenuDespegableModal>
+          </View>
+          
+          {/* Botón de Inicio circular - SIN BORDE BLANCO */}
+          <View style={styles.centerButtonContainer}>
+            <TouchableOpacity 
+              style={styles.centerButton}
+              onPress={() => handleNavigate('/inicio')}
+              activeOpacity={0.9}
             >
-              <IconHome size={28} color="#fff" />
-              <Text style={[styles.menuLabel, styles.centerLabel]}>
-                Inicio
-              </Text>
-            </Animated.View>
-          </TouchableWithoutFeedback>
+              <IconHome size={26} color="#fff" /> 
+            </TouchableOpacity>
+          </View>
+                
+          {/* Sección derecha */}
+          <View style={styles.menuSection}>
+            <MenuItem 
+              icon={<IconDiscount size={22} color={activeRoute === 'ofertas' ? '#00732E' : '#666'} />}
+              label="Ofertas"
+              isActive={activeRoute === 'ofertas'}
+              onPress={() => handleNavigate('/ofertas')}
+            />
+            
+            <MenuItem 
+              icon={<IconCoupons size={22} color={activeRoute === 'cupones' ? '#00732E' : '#666'} />}
+              label="Cupones"
+              isActive={activeRoute === 'cupones'}
+              onPress={() => handleNavigate('/cupones')}
+            />
+          </View>
 
-          {/* Cupones */}
-          <TouchableOpacity
-            style={[
-              styles.menuItem,
-              activeRoute === 'cupones' && styles.activeItemBackground
-            ]}
-            onPress={() => handleNavigate('/cupones')}
-          >
-            <IconCoupons size={24} color={activeRoute === 'cupones' ? '#00732E' : '#999'} />
-            <Text style={[
-              styles.menuLabel,
-              activeRoute === 'cupones' && styles.activeLabel
-            ]}>
-              Cupones
-            </Text>
-          </TouchableOpacity>
+          
 
-          {/* Ofertas */}
-          <TouchableOpacity
-            style={[
-              styles.menuItem,
-              activeRoute === 'ofertas' && styles.activeItemBackground
-            ]}
-            onPress={() => handleNavigate('/ofertas')}
-          >
-            <IconDiscount size={24} color={activeRoute === 'ofertas' ? '#00732E' : '#999'} />
-            <Text style={[
-              styles.menuLabel,
-              activeRoute === 'ofertas' && styles.activeLabel
-            ]}>
-              Ofertas
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+
+        </View>
+        
       </View>
 
-      {/* Botón flotante del carrito */}
       <Animated.View
         {...panResponder.panHandlers}
         style={[
@@ -208,9 +143,9 @@ export default function Menu() {
           }
         ]}
       >
-        <TouchableOpacity onPress={handleCartPress} activeOpacity={0.8}>
+        <TouchableOpacity onPress={handleCartPress} activeOpacity={0.9}>
           <View>
-            <IconShoppingCart size={32} color="#00732E" />
+            <IconShoppingCart size={24} color="#00732E" />
             {cart.length > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cart.length}</Text>
@@ -223,114 +158,150 @@ export default function Menu() {
   );
 }
 
+const MenuItem = ({ icon, label, isActive, onPress, badgeCount = 0 }) => (
+  <TouchableOpacity
+    style={[
+      styles.menuItem,
+      isActive && styles.activeItemBackground
+    ]}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.iconContainer}>
+      {icon}
+      {badgeCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badgeCount}</Text>
+        </View>
+      )}
+    </View>
+    <Text style={[
+      styles.menuLabel,
+      isActive && styles.activeLabel
+    ]}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
   menuContainer: {
-    
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: '#ffffff',
-    
+    borderTopWidth: 0.5,
     borderTopColor: '#e5e5e5',
-    paddingBottom: 25,
-  },
-  bottomMenu: {
-    width: '100%',
-    paddingVertical: 2,
+    paddingVertical: 12,
+    elevation: 8,
+    height: MENU_HEIGHT,
   },
   menuContent: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 0,
+  },
+  menuSection: {
+    flex: 1,
+    flexDirection: 'row',
     justifyContent: 'space-around',
+    marginBottom: 5,
+  },
+  centerButtonContainer: {
+    position: 'absolute',
+    left: SCREEN_WIDTH / 2 - 35,
+    bottom: CENTER_BUTTON_OFFSET,
+    zIndex: 2,
+  },
+  centerButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(189, 236, 182, 0.9)', // Verde más claro con 85% de opacidad
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  centerButtonActive: {
+    backgroundColor: '#E6F4EC',
+    // BORDE ELIMINADO:
+    // borderColor: '#00994D',
   },
   menuItem: {
     alignItems: 'center',
-    paddingVertical: 8,
-    minWidth: 70,
-    position: 'relative',
-    borderRadius: 12,
+    paddingVertical: 4,
+    width: SCREEN_WIDTH / 5,
+    borderRadius: 8,
   },
-  centerItem: {
-    marginHorizontal: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 32,
-    backgroundColor: '#00994D',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+  iconContainer: {
+    position: 'relative',
+    marginBottom: 2,
   },
   menuLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    color: '#000',
-    fontWeight: '600',
-  },
-  centerLabel: {
-    color: '#fff',
-    fontWeight: '600',
+    fontSize: 10,
+    color: '#666',
+    fontWeight: '500',
+    marginTop: 0,
   },
   activeLabel: {
     color: '#00732E',
+    fontWeight: '600',
   },
   activeItemBackground: {
-    backgroundColor: '#E6F4EC',
+    backgroundColor: '#f5f5f5',
   },
   badge: {
     position: 'absolute',
-    top: -5,
-    right: -5,
+    top: -6,
+    right: -8,
     backgroundColor: '#dc2626',
-    borderRadius: 10,
-    width: 18,
-    height: 18,
+    borderRadius: 8,
+    width: 14,
+    height: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   badgeText: {
     color: 'white',
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold',
   },
-draggableButton: {
-  position: 'absolute',
-  bottom: '12%',
-  right: 16, // 👈 Lo movemos a la derecha
-  backgroundColor: '#ffffff',
-  borderRadius: 40,
-  borderBottomWidth: 9, // Grosor del borde inferior
-  
-
-  borderBottomColor: '#04a909ff', // Color rojo
-  padding: 16,
-  elevation: 30,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 6,
-  zIndex: 100,
-
-},
-
+  draggableButton: {
+    position: 'absolute',
+    bottom: MENU_HEIGHT + 60,
+    right: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 30,
+    padding: 15,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 100,
+    borderWidth: 0.5,
+    borderColor: '#e5e5e5',
+  },
   cartBadge: {
     position: 'absolute',
-    top: -5,
-    right: -5,
+    top: -4,
+    right: -4,
     backgroundColor: '#dc2626',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    borderRadius: 8,
+    width: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cartBadgeText: {
     color: 'white',
-    fontSize: 12,
-   
+    fontSize: 10,
     fontWeight: 'bold',
   },
 });

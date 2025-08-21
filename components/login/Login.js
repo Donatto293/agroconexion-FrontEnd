@@ -17,12 +17,12 @@ import { CartContext } from '../../context/cartContext';
 import { FavoritesContext } from '../../context/favoritesContext';
 import api from '../../utils/axiosInstance';
 import { getApiErrorMessage } from '../../utils/getApiError';
-import { confirmPasswordReset, requestPasswordReset } from '../../api/user';
+import { confirmPasswordReset, loginStep2, requestPasswordReset } from '../../api/user';
 
 
 export default function Login() {
   // Contexto de autenticación
-  const { login } = useAuth();
+  const { login, loadSession } = useAuth();
   const { loadCart } = useContext(CartContext);
   const { fetchFavorites } = useContext(FavoritesContext);
   const router = useRouter();
@@ -118,9 +118,10 @@ export default function Login() {
 
           // Si requiere autenticación en dos pasos
           if (response.status === 'need_2FA') {
-              setTwoFASessionToken(response.data.session_token);
-              setTwoFAModalVisible(true);
-              return;
+            setVerificationEmail(response.email);
+            setTwoFASessionToken(response.sessionToken || null);
+            setTwoFAModalVisible(true);
+            return;
           }
 
           if(response.status== 'success'){
@@ -159,37 +160,43 @@ export default function Login() {
 
   // Autenticación en dos pasos
   const handleTwoFactorAuth = async () => {
-    if (!twoFACode) {
-      Alert.alert('Error', 'Por favor ingresa el código de autenticación');
-      return;
-    }
+    if (!twoFACode?.trim()) {
+    Alert.alert('Error', 'Por favor ingresa el código de autenticación');
+    return;
+  }
 
+    setIsLoading(true);
     try {
-      const response = await api.post('/api/users/login/step2/', {
-        token: twoFASessionToken,
-        code: twoFACode
-      });
+      // Usamos verificationEmail (rellenado en handleLogin) o username
+      
+      const result = await loginStep2(verificationEmail, twoFACode.trim());
 
-      const { access, refresh, userName, userImage } = response.data;
-      await AsyncStorage.multiSet([
-        ['accessToken', access],
-        ['refreshToken', refresh],
-        ['username', userName],
-        ['profile_image', userImage || '']
-      ]);
 
-      login({ 
-        username: userName, 
-        profile_image: userImage,
-        token: access
-      });
+      const { access, refresh, userName, userImage, userEmail } = result.data;
 
-      await Promise.all([loadCart(), fetchFavorites()]);
-      router.replace('/inicio');
+       // Preparar los valores para AsyncStorage (evitar undefined/null)
+      const storageData = [
+        ['accessToken', access || ''],
+        ['refreshToken', refresh || ''],
+        ['username', userName || verificationEmail || ''],
+        ['profile_image', userImage || ''],
+        ['email', userEmail || verificationEmail || '']
+      ].filter(([_, value]) => value !== null && value !== undefined);
+
+      // Guardar tokens
+      await AsyncStorage.multiSet(storageData);
+
+      // Actualizar el estado de autenticación
+      await loadSession();
+        
+
       setTwoFAModalVisible(false);
-    } catch (error) {
-      console.error('2FA error:', error.response?.data || error.message);
-      Alert.alert('Error', error.response?.data?.detail || 'Código inválido');
+      router.replace('/inicio');
+    } catch (err) {
+      console.error('2FA error (UI):', err);
+      Alert.alert('Error', err?.detail || err?.error || 'Código inválido o expirado');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -378,7 +385,7 @@ export default function Login() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Autenticación en Dos Pasos</Text>
-            <Text className="mb-4">Por favor ingresa el código de tu aplicación de autenticación.</Text>
+            <Text className="mb-4">Por favor ingresa el código de autenticación que fue enviado a tu correo.</Text>
             
             <TextInput
               label="Código de autenticación"
