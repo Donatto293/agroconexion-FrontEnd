@@ -11,6 +11,7 @@ export default function PrivacidadScreen() {
   const { user, logout, userFull } = useAuth();
   const router = useRouter();
 
+  
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => {
   // inicializa desde userFull si existe
   return userFull?.two_factor_enabled ?? userFull?.two_factor_enable ?? false;
@@ -127,7 +128,7 @@ export default function PrivacidadScreen() {
               <ActivityIndicator size="small" color="#00732E" style={{ marginLeft: 8 }} />
             ) : (
               <Text style={styles.optionText}>
-                {twoFactorEnabled ? "Desactivar autentificacion de 2 pasos" : "Activar autentificacion de 2 pasos"}
+                {twoFactorEnabled==false ? "Activar autentificacion de 2 pasos" : "Desactivar autentificacion de 2 pasos"}
               </Text>
             )}
           </View>

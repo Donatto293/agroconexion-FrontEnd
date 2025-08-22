@@ -18,6 +18,7 @@ export default function HeaderScreen() {
   const { searchQuery, setSearchQuery } = useContext(SearchContext);
   const { user } = useAuth();
   const router = useRouter();
+  
   const avatar = user?.profile_image;
 
   const API_URL =api.defaults.baseURL

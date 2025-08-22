@@ -14,6 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import api from '../utils/axiosInstance';
 import StarRating from './StarRating'; // Se asume que este componente ya maneja la lógica de calificación dinámica
+import { usePathname, useRouter } from 'expo-router';
 
 const CommentSection = ({ productId, user, onAuthRequired }) => {
   const [comments, setComments] = useState([]);
@@ -25,6 +26,9 @@ const CommentSection = ({ productId, user, onAuthRequired }) => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
+
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const fetchComments = async () => {
@@ -155,7 +159,7 @@ const CommentSection = ({ productId, user, onAuthRequired }) => {
           'Content-Type': 'multipart/form-data'
         }
       });
-
+      router.replace(pathname)
       if (response.data?.id) {
         const newCommentItem = {
           id: response.data.id,

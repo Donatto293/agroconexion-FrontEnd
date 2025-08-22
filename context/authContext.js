@@ -123,7 +123,7 @@ export function AuthProvider({ children }) {
       // Leer valores guardados
       const pairs = await AsyncStorage.multiGet([
         'accessToken',
-        'refreshToken',
+        'refresh',
         'username',
         'profile_image',
         'email',
@@ -162,6 +162,7 @@ export function AuthProvider({ children }) {
 
         const fullUser = {
           token: accessToken,
+          refresh:refreshToken,
           id: info.id ?? null,
           username: info.username ?? storedUsername ?? '',
           email: info.email ?? storedEmail ?? '',

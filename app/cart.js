@@ -15,7 +15,7 @@ import { Link, useRouter } from 'expo-router';
 import { CartContext } from '../context/cartContext';
 import { IconArrowLeft, IconTrash } from '../components/icons';
 import { createInvoiceFromCart } from '../api/invoices';
-import useProducts from '../api/products';
+import { useProductsContext } from '../context/productContext';
 import api from '../utils/axiosInstance';
 import ImageViewing from 'react-native-image-viewing';
 import PaymentScreen from '../components/payment';
@@ -23,7 +23,7 @@ import PaymentScreen from '../components/payment';
 const CartScreen = memo(() => {
   const { cart, removeFromCart, clearCart, total, resetCart, decreaseQuantity, increaseQuantity, updateQuantity } = useContext(CartContext);
   const router = useRouter();
-  const { products } = useProducts();
+  const { products } = useProductsContext();
   const API_URL = api.defaults.baseURL;
 
   const [visible, setVisible] = useState(false);

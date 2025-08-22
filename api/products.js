@@ -1,6 +1,7 @@
-// api/products.js
+
 import api from '../utils/axiosInstance'; // tu instancia axios (con baseURL ya configurada)
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const ENDPOINTS = {
   list: '/api/products/list-products/',
@@ -19,6 +20,7 @@ const ENDPOINTS = {
   deleteRating: (id) => `/api/products/delete-rating/${id}/`,
   statsRating: (id) => `/api/products/stats_rating/${id}/`,
 };
+const BASE_URL = api.defaults.baseURL
 
 async function getAuthHeader() {
   const token = await AsyncStorage.getItem('accessToken');
@@ -30,6 +32,8 @@ function handleError(err) {
   if (err?.response?.data) return Promise.reject(err.response.data);
   return Promise.reject(err?.message || err);
 }
+
+
 
 /* ---------- Productos ---------- */
 
@@ -63,53 +67,53 @@ export async function getProductDetail(productId) {
 
 /**
  * createProduct
- * @param {Object} product - { title, description, price, stock, category: [ids], ... }
- * @param {Array} images - array de URIs o objetos { uri, name, type } (RN)
+ * form con los datos 
  */
-export async function createProduct(product = {}, images = []) {
+export async function createProduct(form) {
+
   try {
-    const headers = await getAuthHeader();
-    const form = new FormData();
+    const url = `${api.defaults.baseURL}${ENDPOINTS.newProduct}`;
 
-    // Agregar campos
-    Object.keys(product).forEach((key) => {
-      const val = product[key];
-      if (Array.isArray(val)) {
-        // category -> enviar múltiples entradas
-        val.forEach((v) => form.append(`${key}`, String(v)));
-      } else if (val !== undefined && val !== null) {
-        form.append(key, String(val));
-      }
-    });
-
-    // Agregar imágenes (si existen)
-    images.forEach((img, idx) => {
-      // Si el caller pasa solo URI, normalizamos
-      if (typeof img === 'string') {
-        // intentar inferir nombre y type simples
-        form.append('images', {
-          uri: img,
-          name: `image_${Date.now()}_${idx}.jpg`,
-          type: 'image/jpeg',
-        });
-      } else {
-        // ya viene como objeto { uri, name, type }
-        form.append('images', img);
-      }
-    });
-
-    const res = await api.post(ENDPOINTS.newProduct, form, {
+    // NOTA: NO poner header 'Content-Type' dejando que fetch lo genere.
+    const token = await AsyncStorage.getItem('accessToken');
+    const response = await fetch(url, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'multipart/form-data',
-        ...headers,
+         Authorization: `Bearer ${token}`
       },
+      body: form,
     });
-    return res.data;
+
+    //PRUEBA CON AXIOS 
+    // await api.post(
+    //   ENDPOINTS.newProduct,
+    //   form,
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //       // NO Content-Type: multipart/form-data (Axios lo inyecta con boundary)
+    //     },
+    //   }
+    // );
+
+    const text = await response.text();
+    let data;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+
+    console.log('createProductFetch status:', response.status, 'body:', data);
+
+    if (!response.ok) {
+      const err = new Error('Error en crear producto');
+      err.response = { status: response.status, data };
+      throw err;
+    }
+
+    return data;
   } catch (err) {
-    return handleError(err);
+    console.error('createProductFetch error:', err);
+    throw err;
   }
 }
-
 /**
  * updateProduct
  * @param {number|string} productId

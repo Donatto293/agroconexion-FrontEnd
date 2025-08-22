@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext,useMemo, useEffect, useState, useCallback } from 'react';
+import { Alert } from 'react-native';
 
 
 import * as productApi from '../api/products';
@@ -56,11 +57,55 @@ export const ProductProvider = ({ children }) => {
   }, [products]);
 
   // Crear producto. Si backend retorna el objeto creado lo insertamos, si solo devuelve mensaje hacemos refresh.
-  const createProduct = useCallback(async (productData = {}, images = []) => {
+  const createProduct = useCallback(async (product = {}, images = []) => {
     try {
       // Opcional: validaciones previas al envío
-      const res = await productApi.createProduct(productData, images);
+      const form = new FormData();
+
+    // Campos normales (category como array -> varias entradas)
+      form.append("name", product.name);
+      form.append("description", product.description);
+      form.append("price", String(product.price));
+      form.append("stock", String(product.stock));
+      form.append("unit_of_measure", product.unit_of_measure);
+      form.append("state", product.state);
+      form.append("category", String(product.category));
+
+      // 👇 importar varias imágenes correctamente
+      images.forEach((img, index) => {
+        let mime = img.type;
+        if (mime === "image") {
+          // si viene solo "image", intenta deducir la extensión
+          const ext = img.uri.split(".").pop().toLowerCase();
+          if (ext === "jpg" || ext === "jpeg") mime = "image/jpeg";
+          else if (ext === "png") mime = "image/png";
+          else mime = "image/jpeg"; // fallback
+        }
+
+        form.append("images", {
+          uri: img.uri,
+          type: mime,
+          name: img.name || `image_${index}.jpg`,
+        });
+      });
+      //por si se quiere ver que se envia
+
+
+      //console.log('form antes de enviar:',form)
+
+      // form._parts.forEach(([key, value]) => {
+      //   if (typeof value === "object" && value.uri) {
+      //     console.log(`🖼️ ${key}:`, value);
+      //   } else {
+      //     console.log(`📦 ${key}:`, value);
+      //   }
+      // });
+
+
+
+      const res = await productApi.createProduct(form);
       // Algunos endpoints devuelven el objeto creado, otros solo detail -> manejamos ambos casos
+
       if (res && (res.id || res.product)) {
         const created = res.product ?? res;
         setProducts((prev) => [created, ...prev]);

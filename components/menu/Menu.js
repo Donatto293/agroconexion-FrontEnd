@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   },
   draggableButton: {
     position: 'absolute',
-    bottom: MENU_HEIGHT + 60,
+    bottom: MENU_HEIGHT + 10,
     right: 20,
     backgroundColor: '#ffffff',
     borderRadius: 30,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   },
   cartBadge: {
     position: 'absolute',
-    top: -4,
+    top: -8,
     right: -4,
     backgroundColor: '#dc2626',
     borderRadius: 8,

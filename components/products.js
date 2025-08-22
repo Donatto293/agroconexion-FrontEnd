@@ -18,7 +18,7 @@ export default function Products() {
   const router = useRouter();
   const { products, loading, error } = useProductsContext();
   const { searchQuery } = useContext(SearchContext);
-  console.log(products)
+  
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase().trim())

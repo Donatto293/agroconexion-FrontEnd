@@ -13,7 +13,7 @@ import {
     Dimensions
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import useProducts from '../api/products';
+import { useProductsContext } from '../context/productContext';
 import { useContext, useState, useEffect, useRef } from 'react';
 import { CartContext } from '../context/cartContext';
 import { FavoritesContext } from '../context/favoritesContext';
@@ -29,7 +29,7 @@ const API_URL = api.defaults.baseURL;
 
 export default function ProductDetail() {
     const { id } = useLocalSearchParams();
-    const { products, loading, error } = useProducts();
+    const { products, loading, error } = useProductsContext();
     const { addToCart } = useContext(CartContext);
     const { favorites, addFavorite, removeFavorite } = useContext(FavoritesContext);
     const router = useRouter();
